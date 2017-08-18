@@ -7,7 +7,17 @@ while(True):
 		    recognizer.adjust_for_ambient_noise(source)
 		    message=recognizer.recognize_google(audio1)
 		    if (homeName in message):
-		    	command=message[message.index(homeName) + len(homeName):]
+		    	text=message[message.index(homeName) + len(homeName):]
+		    	if ("training" in text):
+		    		train(text)
+		    	else:
+		    		changeHomeState(text)
 	except:
 		print("Check your connection")
-	
+
+def train(command):
+	return
+
+def changeHomeState(command):
+	return
+
