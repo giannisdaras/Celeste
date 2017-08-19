@@ -1,5 +1,24 @@
 import speech_recognition as sr
 import serial
+import threading
+import time
+
+
+def fire():
+	#event fired
+	return
+
+class foo(threading.Thread):
+	#basic thread function!
+	def run(self):
+		time.sleep(2)
+		eventFlag=checkForEvent()
+		if (eventFlag==1):
+			eventFlag=0
+			fire()
+	def checkForEvent(self):
+		return 0
+
 
 class Arduino:
 	def __init__(self):
