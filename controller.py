@@ -1,6 +1,24 @@
 import speech_recognition as sr
 import serial
 
+class Arduino:
+	def __init__(self):
+		x = 0
+		for x in range(10):
+			try:
+				#check if ports work
+				self.ser = serial.Serial('/dev/ttyACM{0}'.format(x), 9600)
+				return
+			except:
+				continue
+		print('No port found')
+
+	def command(self, cmd):
+		self.ser.write(cmd)			
+
+	def __del__(self):
+		self.ser.close()
+
 def train(command):
 	print("Training")
 	return
@@ -8,12 +26,6 @@ def train(command):
 def changeHomeState(command):
 	return
 
-def arduino(command):
-	#replace with your own port
-	ser = serial.Serial('/dev/ttyACM1', 9600)
-	ser.write(command)
-	return
-	
 
 homeName="home"
 recognizer = sr.Recognizer()
