@@ -2,12 +2,32 @@ import speech_recognition as sr
 import serial
 import threading
 import time
+import numpy as np
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn import preprocessing
+from sklearn.model_selection import cross_val_score
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.model_selection import GridSearchCV
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.decomposition import PCA
+from sklearn.ensemble import VotingClassifier
+from sklearn.metrics import f1_score
 
 
 def fire():
+	fold_numbers=4
 	X = np.genfromtxt('training_data.csv', delimiter=',')
 	y = np.genfromtxt('training_results.csv', delimiter=',')
-	return
+	forest=RandomForestClassifier(criterion='entropy',n_estimators=31,n_jobs=1)
+	forest.fit(X,y)
+	print(forest.predict([10,01,0,0,28]))
 
 class foo(threading.Thread):
 	#basic thread function!
@@ -61,7 +81,8 @@ while(True):
 		    		train(text)
 	    except sr.UnknownValueError:
 	    	print("Untracked sound")
-	
-
-
+	    except:
+	    	print("No internet connection")
+	    	break
+fire()
 
