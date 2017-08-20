@@ -5,7 +5,8 @@ import time
 
 
 def fire():
-	#event fired
+	X = np.genfromtxt('training_data.csv', delimiter=',')
+	y = np.genfromtxt('training_results.csv', delimiter=',')
 	return
 
 class foo(threading.Thread):

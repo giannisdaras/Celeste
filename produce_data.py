@@ -50,6 +50,3 @@ for i in range(1000):
 file1.close()
 file2.close()
 
-X = np.genfromtxt('training_data.csv', delimiter=',')
-y = np.genfromtxt('training_results.csv', delimiter=',')
-
