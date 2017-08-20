@@ -178,5 +178,6 @@ def test():
 	state_predictor.saveWeights()
 
 	state_predictor_thread = StatePredictorThread(predictor=state_predictor, update_interval=update_interval)
-	state_predictor_thread.start()
+    state_predictor_thread.start()
+
 test()
