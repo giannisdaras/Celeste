@@ -73,14 +73,13 @@ class Camera(Sensor):
 
 class StatePredictor:
 
-	def __init__(self, states, sensors, optimizer='adam'):
+	def __init__(self, states, sensors, initial_state = 1, optimizer='adam'):
 		# Initializations
 		self.states = states  # states as dictionary
 		for k in self.states.keys():
 			self.states[k].stateid = k
 		self.sensors = sensors
-		self.states[0] = State('initial', 0)
-		self.state = self.states[0]
+		self.state = self.states[initial_state]
 		self.start_time = time.time()
 		# Input Configuration:
 		# x1: Previous State
@@ -95,7 +94,8 @@ class StatePredictor:
 		# Model configuration
 		# TODO add model topology
 		self.model = Sequential()
-		self.model.add(Dense(16, input_dim=self.num_inputs, activation='relu'))
+		self.model.add(Dense(16, input_dim=self.num_inputs))
+		self.model.add(Activation('relu'))
 
 		self.model.add(Dense(32))
 		self.model.add(Activation('relu'))
@@ -109,6 +109,7 @@ class StatePredictor:
 		metrics=['accuracy'])
 
 	def train(self, x, y, onehot=False, epochs=30, batch_size=128, delimiter=' '):
+		print 'Training'
 		if type(x) == str and type(y) == str:
 			x = np.genfromtxt(x, delimiter=delimiter)
 			y = np.genfromtxt(y, delimiter=delimiter)
@@ -129,12 +130,17 @@ class StatePredictor:
 		self.model.summary()
 
 	def update(self, retrain=True):
-		dt = time.time() - self.start_time
+		#dt = time.time() - self.start_time
+		print 'Updating'
+		dt = datetime.datetime.now().hour
 		x = np.array([dt, self.state.stateid])
 
 		for sensor in self.sensors:
-			np.append(x, sensor.getData().flatten())
+			d = sensor.getData().flatten()
+			x  = np.append(x, d)
 
+		print x
+		x = x.reshape((-1, 1))
 		y_hat = self.model.predict(x)
 		# use softmax
 		# y_hat = softmax(self.model.predict(x))
@@ -165,7 +171,7 @@ class StatePredictorThread(threading.Thread):
 		self.update_interval = update_interval
 
 	def run(self):
-		while True:
+		for i in range(50):
 			self.predictor.update()
 			time.sleep(self.update_interval)
 
@@ -188,16 +194,38 @@ class StatePredictorTestCase(unittest.TestCase):
 			5: State('Close shutters', 5),
 		}
 
-		self.state_predictor = StatePredictor(states, sensors)
+		self.state_predictor = StatePredictor(self.states, self.sensors)
 		self.state_predictor.train('train_data_x.csv', 'train_data_y.csv')
 		self.state_predictor.saveWeights()
 
-		self.state_predictor_thread = StatePredictorThread(
-    predictor=state_predictor, update_interval=update_interval)
-	    state_predictor_thread.start()
+		self.state_predictor_thread = StatePredictorThread(predictor=self.state_predictor, update_interval=update_interval)
+		self.state_predictor_thread.start()
 
-	def evaluate(self):
+def test():
+	sensors = [
+		DummySensor('number_of_people', 1, 0, 20),
+		DummySensor('mood', 1, 0, 10),
+		DummySensor('light', 1, 0, 255),
+		DummySensor('temperature', 1, 10, 40)
+	]
+
+	states = {
+		1: State('Do Nothing', 1),
+		2: State('Raise temperature', 2),
+		3: State('Decrease temperature', 3),
+		4: State('Turn on music', 4),
+		5: State('Close shutters', 5),
+	}
+	state_predictor = StatePredictor(states, sensors)
+	#state_predictor.train('train_data_x.csv', 'train_data_y.csv')
+	#state_predictor.saveWeights()
+
+	#state_predictor_thread = StatePredictorThread(predictor=state_predictor, update_interval=update_interval)
+	#state_predictor_thread.start()
+	for i in range(2):
+		state_predictor.update()
 
 
 if __name__ == '__main__':
-	unittest.main()
+	#unittest.main()
+	test()
