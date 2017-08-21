@@ -14,13 +14,13 @@ class State:
 		self.stateid = stateid
 		self.subscribers = [self.nameSub]
 
-	def addData(x):
+	def addData(self, x):
 		np.append(self.data, x)
 
 	def __le__(self, other):
 		return self._likelihood < other._likelihood
 
-	def onActivation(x):
+	def onActivation(self, x):
 		for f in self.subscribers:
 			f(x)
 
@@ -28,7 +28,7 @@ class State:
 		self.subscribers.append(sub)
 
 	def nameSub(self, x):
-		print self.name
+		print 'Subscriber called for ' +  self.name
 
 
 class Sensor:
@@ -71,9 +71,10 @@ class Camera(Sensor):
 		self.cam.release()
 
 
-class StatePredictor:
+class StatePredictor(threading.Thread):
 
-	def __init__(self, states, sensors, initial_state = 1, optimizer='adam'):
+	def __init__(self, states, sensors, layout = (32, 64), initial_state = 1, optimizer='adam', update_interval=1):
+		super(StatePredictor, self).__init__()
 		# Initializations
 		self.states = states  # states as dictionary
 		for k in self.states.keys():
@@ -81,6 +82,8 @@ class StatePredictor:
 		self.sensors = sensors
 		self.state = self.states[initial_state]
 		self.start_time = time.time()
+		self.layout = layout
+		self.update_interval = update_interval
 		# Input Configuration:
 		# x1: Previous State
 		# x2: Current Time
@@ -94,11 +97,12 @@ class StatePredictor:
 		# Model configuration
 		# TODO add model topology
 		self.model = Sequential()
-		self.model.add(Dense(16, input_dim=self.num_inputs))
+		self.model.add(Dense(layout[0], input_dim = self.num_inputs))
 		self.model.add(Activation('relu'))
 
-		self.model.add(Dense(32))
-		self.model.add(Activation('relu'))
+		for i in range(1, len(layout)):
+			self.model.add(Dense(layout[i]))
+			self.model.add(Activation('relu'))
 
 		# Outputs
 		# y1, y2, ym : Next state probabilities
@@ -129,6 +133,16 @@ class StatePredictor:
 	def __repr__(self):
 		self.model.summary()
 
+
+	def predict_next(self, x, verbose=True):
+		y_prob = self.model.predict(np.array([x]))
+		index = np.argmax(y_prob)
+		if verbose:
+			for i in range(len(y_prob[0])):
+				print 'State : {}, Probability : {}'.format(i, y_prob[0][i])
+		return index
+
+
 	def update(self, retrain=True):
 		#dt = time.time() - self.start_time
 		print 'Updating'
@@ -136,23 +150,24 @@ class StatePredictor:
 		x = np.array([dt, self.state.stateid])
 
 		for sensor in self.sensors:
-			d = sensor.getData().flatten()
+			d = sensor.getData()
 			x  = np.append(x, d)
 
-		print x
-		x = x.reshape((-1, 1))
-		y_hat = self.model.predict(x)
+		index = self.predict_next(x)
+
 		# use softmax
 		# y_hat = softmax(self.model.predict(x))
-		index = np.argmax(y_hat)
 		self.state = self.states[index]
-		print 'New state: {0}'.format(self.states[index])
+		print 'New state: {0}'.format(self.states[index].name)
 
 		# Retrain our model
 		if retrain == True:
-			self.model.fit(x, y_hat, epochs=1, batch_size=128)
+			print 'Retraining'
+			y  = keras.utils.to_categorical(index, self.num_classes)
+			self.model.train_on_batch(np.array([x]), y)
 
-		self.state.OnActivation(x)
+		self.state.onActivation(x)
+
 
 	def evaluate(self, x_test, y_test, delimiter=' '):
 		if type(x_test) == str and type(y_test) == str:
@@ -162,44 +177,10 @@ class StatePredictor:
 		self.scores = self.model.evaluate(x_test, y_test)
 		return self.scores
 
-
-class StatePredictorThread(threading.Thread):
-
-	def __init__(self, predictor, update_interval=1):
-		super(StatePredictorThread, self).__init__()
-		self.predictor = predictor
-		self.update_interval = update_interval
-
 	def run(self):
-		for i in range(50):
-			self.predictor.update()
+		while True:
+			self.update()
 			time.sleep(self.update_interval)
-
-
-class StatePredictorTestCase(unittest.TestCase):
-
-	def test(self):
-		self.sensors = [
-			DummySensor('number_of_people', 1, 0, 20),
-			DummySensor('mood', 1, 0, 10),
-			DummySensor('light', 1, 0, 255),
-			DummySensor('temperature', 1, 10, 40)
-		]
-
-		self.states = {
-			1: State('Do Nothing', 1),
-			2: State('Raise temperature', 2),
-			3: State('Decrease temperature', 3),
-			4: State('Turn on music', 4),
-			5: State('Close shutters', 5),
-		}
-
-		self.state_predictor = StatePredictor(self.states, self.sensors)
-		self.state_predictor.train('train_data_x.csv', 'train_data_y.csv')
-		self.state_predictor.saveWeights()
-
-		self.state_predictor_thread = StatePredictorThread(predictor=self.state_predictor, update_interval=update_interval)
-		self.state_predictor_thread.start()
 
 def test():
 	sensors = [
@@ -210,22 +191,15 @@ def test():
 	]
 
 	states = {
-		1: State('Do Nothing', 1),
-		2: State('Raise temperature', 2),
-		3: State('Decrease temperature', 3),
-		4: State('Turn on music', 4),
-		5: State('Close shutters', 5),
+		0: State('Do Nothing', 0),
+		1: State('Raise temperature', 1),
+		2: State('Decrease temperature', 2),
+		3: State('Turn on music', 3),
+		4: State('Close shutters', 4),
 	}
-	state_predictor = StatePredictor(states, sensors)
-	#state_predictor.train('train_data_x.csv', 'train_data_y.csv')
-	#state_predictor.saveWeights()
-
-	#state_predictor_thread = StatePredictorThread(predictor=state_predictor, update_interval=update_interval)
-	#state_predictor_thread.start()
-	for i in range(2):
-		state_predictor.update()
+	state_predictor = StatePredictor(states, sensors, update_interval=10)
+	state_predictor.start()
 
 
 if __name__ == '__main__':
-	#unittest.main()
 	test()
