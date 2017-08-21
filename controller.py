@@ -71,7 +71,8 @@ def changeHomeState(command):
 	return
 
 
-event= Event()
+recorder=VoiceRecognition()
+recorder.rec()
 
 
 
