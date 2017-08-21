@@ -229,7 +229,5 @@ def test():
     print 'Thread continues'
     state_predictor.resume()
 
-
-
 if __name__ == '__main__':
     test()
