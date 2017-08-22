@@ -33,6 +33,7 @@ class VoiceClassifier(threading.Thread):
 					except sr.UnknownValueError:
 						print('Untracked')
 					finally:
+						time.sleep(1)
 						self.triggered = False
 
 	def run(self):

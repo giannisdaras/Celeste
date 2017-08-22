@@ -157,16 +157,18 @@ class StatePredictor(threading.Thread):
                 print 'State : {}, Probability : {}'.format(i, y_prob[0][i])
         return index
 
-    def update(self, retrain=True):
-        #dt = time.time() - self.start_time
-        print 'Updating'
+    def getData(self):
         dt = datetime.datetime.now().hour
         x = np.array([dt, self.state.stateid])
-
         for sensor in self.sensors:
             d = sensor.getData()
             x = np.append(x, d)
+        return x
 
+    def update(self, retrain=True):
+        print 'Updating'
+
+        x = self.getData()
         index = self.predict_next(x)
 
         # use softmax
@@ -211,11 +213,11 @@ class StatePredictor(threading.Thread):
         ]
 
         states = {
-            0: State('Do Nothing', 0),
-            1: State('Raise temperature', 1),
-            2: State('Decrease temperature', 2),
-            3: State('Turn on music', 3),
-            4: State('Close shutters', 4),
+            0: State('do nothing', 0),
+            1: State('raise temperature', 1),
+            2: State('decrease temperature', 2),
+            3: State('turn on music', 3),
+            4: State('close shutters', 4),
         }
         state_predictor = StatePredictor(states, sensors, update_interval=update_interval)
         return state_predictor
