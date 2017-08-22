@@ -15,6 +15,8 @@ class VoiceClassifier(threading.Thread):
 		threading.Thread.__init__(self)
 		self.running = True
 		self.recognizer = sr.Recognizer()
+		self.triggered = False
+		self.instruction = ''
 
 	def rec(self):
 		while True:
@@ -27,13 +29,15 @@ class VoiceClassifier(threading.Thread):
 				    	message=self.recognizer.recognize_google(audio1)
 				    	print('message was: ' + message)
 				    	if (homeName in message):
+							self.triggered = True
 					    	text=message[message.index(homeName) + len(homeName) + 1:]
-					    	if ("training" in text):
+							self.instruction = text
+							if ("training" in text):
 					    		train(text)
 				    except sr.UnknownValueError:
 				    	print('Untracked')
-				    except:
-				    	continue
+				   	finally:
+						self.triggered = False
 
 	def run(self):
 		self.rec()
@@ -43,7 +47,6 @@ class VoiceClassifier(threading.Thread):
 
 	def resume(self):
 		self.running = True
-
 
 def train(command):
 	print("Training")
