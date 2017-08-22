@@ -1,6 +1,5 @@
 from __init__ import *
 
-
 def softmax(y):
     z = np.exp(y)
     return z / np.sum(z)
