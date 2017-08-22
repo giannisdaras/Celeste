@@ -201,25 +201,30 @@ class StatePredictor(threading.Thread):
     def resume(self):
         self.running = True
 
+    @staticmethod
+    def DummyStatePredictor(update_interval=1):
+        sensors = [
+            DummySensor('number_of_people', 1, 0, 20),
+            DummySensor('mood', 1, 0, 10),
+            DummySensor('light', 1, 0, 255),
+            DummySensor('temperature', 1, 10, 40)
+        ]
+
+        states = {
+            0: State('Do Nothing', 0),
+            1: State('Raise temperature', 1),
+            2: State('Decrease temperature', 2),
+            3: State('Turn on music', 3),
+            4: State('Close shutters', 4),
+        }
+        state_predictor = StatePredictor(states, sensors, update_interval=update_interval)
+        return state_predictor
+
 # Testcase
 
 
 def test():
-    sensors = [
-        DummySensor('number_of_people', 1, 0, 20),
-        DummySensor('mood', 1, 0, 10),
-        DummySensor('light', 1, 0, 255),
-        DummySensor('temperature', 1, 10, 40)
-    ]
-
-    states = {
-        0: State('Do Nothing', 0),
-        1: State('Raise temperature', 1),
-        2: State('Decrease temperature', 2),
-        3: State('Turn on music', 3),
-        4: State('Close shutters', 4),
-    }
-    state_predictor = StatePredictor(states, sensors, update_interval=1)
+    state_predictor = StatePredictor.DummyStatePredictor()
     state_predictor.start()
     time.sleep(5)
     print 'Thread paused'
