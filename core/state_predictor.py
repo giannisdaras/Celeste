@@ -43,7 +43,8 @@ class StatePredictor(multiprocessing.Process):
             optimizer='adam',
             update_interval=1,
             based_on_current_time = True,
-            based_on_previous_states = True):
+            based_on_previous_states = True,
+            queue=None):
         super(StatePredictor, self).__init__()
         # Initializations
         self.states = states  # states as dictionary
@@ -57,6 +58,7 @@ class StatePredictor(multiprocessing.Process):
         self.layout = layout
         self.running = True
         self.update_interval = update_interval
+        self.queue = queue
         # Input Configuration:
         # x1: Previous State
         # x2: Current Time
@@ -119,6 +121,8 @@ class StatePredictor(multiprocessing.Process):
         if verbose:
             for i in range(len(y_prob[0])):
                 print 'State : {}, Probability : {}'.format(i, y_prob[0][i])
+        if self.queue != None:
+            self.queue.put(index)
         return index
 
     def getData(self):
