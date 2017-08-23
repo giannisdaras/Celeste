@@ -30,7 +30,7 @@ class State:
     def nameSub(self, x):
         print 'Subscriber called for ' + self.name
 
-class StatePredictor(threading.Thread):
+class StatePredictor(multiprocessing.Process):
 
     def __init__(
             self,

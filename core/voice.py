@@ -3,9 +3,9 @@ from __init__ import *
 global homeName
 homeName="home"
 
-class VoiceClassifier(threading.Thread):
+class VoiceClassifier(multiprocessing.Process):
 	def __init__(self):
-		threading.Thread.__init__(self)
+		super(VoiceClassifier, self).__init__()
 		self.running = True
 		self.recognizer = sr.Recognizer()
 		self.triggered = False #Sets to true when it hears its name

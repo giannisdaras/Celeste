@@ -9,9 +9,6 @@ def get_board(num_tries = 10):
             continue
     return None
 
-global board
-board = get_board()
-
 # Sensing
 
 class Sensor:
@@ -71,7 +68,7 @@ class ArduinoSensor(Sensor):
         #setup board
         for pin in input_pins:
             self.board.set_pin_mode(pin.pin, self.board.INPUT if pin.mode == 'INPUT' else self.board.PWM,
-            self.board.DIGITAL if pin.pintype='DIGITAL' else self.board.ANALOG)
+            self.board.DIGITAL if pin.pintype=='DIGITAL' else self.board.ANALOG)
 
     def getData(self):
         x = np.array([])
