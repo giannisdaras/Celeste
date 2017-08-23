@@ -1,4 +1,5 @@
 from __init__ import *
+from sensors import *
 
 def softmax(y):
     z = np.exp(y)
@@ -29,47 +30,6 @@ class State:
     def nameSub(self, x):
         print 'Subscriber called for ' + self.name
 
-
-class Sensor:
-
-    def __init__(self, name, output_ports):
-        self.name = name
-        self.output_ports = output_ports
-
-    def getData(self):
-        return None
-
-
-class DummySensor(Sensor):
-
-    def __init__(self, name, output_ports, lower, upper):
-        # super(DummySensor, self).__init__(name, output_ports)
-        self.name, self.output_ports = name, output_ports
-        self.lower, self.upper = lower, upper
-
-    def getData(self):
-        return np.array(self.output_ports *
-                        [np.random.randint(self.lower, self.upper)])
-
-
-class Camera(Sensor):
-
-    def __init__(self, name, index):
-        self.cam = cv2.VideoCapture(index)
-        ret, frame = self.cam.read()
-        frame = frame.flatten()
-        super(Camera, self).__init__(name, frame.shape[0])
-
-    def getData(self, grayscale=True):
-        ret, frame = self.cam.read()
-        if grayscale:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        return frame
-
-    def __del__(self):
-        self.cam.release()
-
-
 class StatePredictor(threading.Thread):
 
     def __init__(
@@ -79,15 +39,19 @@ class StatePredictor(threading.Thread):
             layout=(
                 32,
                 64),
-            initial_state=1,
+            initial_state=0,
             optimizer='adam',
-            update_interval=1):
+            update_interval=1,
+            based_on_current_time = True,
+            based_on_previous_states = True):
         super(StatePredictor, self).__init__()
         # Initializations
         self.states = states  # states as dictionary
         for k in self.states.keys():
             self.states[k].stateid = k
         self.sensors = sensors
+        self.based_on_current_time = based_on_current_time
+        self.based_on_previous_states = based_on_previous_states
         self.state = self.states[initial_state]
         self.start_time = time.time()
         self.layout = layout
@@ -97,7 +61,7 @@ class StatePredictor(threading.Thread):
         # x1: Previous State
         # x2: Current Time
         # x3, xN : flattened sensor inputs
-        self.num_inputs = 2
+        self.num_inputs = (based_on_current_time == True) + (based_on_previous_states == True)
         for s in self.sensors:
             self.num_inputs += s.output_ports
 
@@ -158,8 +122,11 @@ class StatePredictor(threading.Thread):
         return index
 
     def getData(self):
-        dt = datetime.datetime.now().hour
-        x = np.array([dt, self.state.stateid])
+        x = np.array([])
+        if self.based_on_current_time:
+            x = np.array(x, datetime.datetime.now().hour)
+        if self.based_on_previous_states:
+            x = np.append(x, self.state.stateid)
         for sensor in self.sensors:
             d = sensor.getData()
             x = np.append(x, d)
@@ -222,9 +189,15 @@ class StatePredictor(threading.Thread):
         state_predictor = StatePredictor(states, sensors, update_interval=update_interval)
         return state_predictor
 
+    @property
+    def idle(self):
+        return self.state.stateid == 0
+
+    @idle.getter
+    def idle(self):
+        return self.state.stateid == 0
+
 # Testcase
-
-
 def test():
     state_predictor = StatePredictor.DummyStatePredictor()
     state_predictor.start()

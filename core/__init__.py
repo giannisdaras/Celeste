@@ -9,3 +9,4 @@ from keras.models import Sequential
 from keras.layers import Dense, Activation, Convolution2D, MaxPooling2D
 import speech_recognition as sr
 import threading
+from PyMata.pymata import PyMata

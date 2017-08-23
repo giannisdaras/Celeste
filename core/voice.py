@@ -3,16 +3,13 @@ from __init__ import *
 global homeName
 homeName="home"
 
-def fire():
-	return
-
 class VoiceClassifier(threading.Thread):
 	def __init__(self):
 		threading.Thread.__init__(self)
 		self.running = True
 		self.recognizer = sr.Recognizer()
-		self.triggered = False
-		self.instruction = ''
+		self.triggered = False #Sets to true when it hears its name
+		self.instruction = '' #holds last instruction as string
 
 	def rec(self):
 		while True:
@@ -49,12 +46,8 @@ def train(command):
 	print("Training")
 	return
 
-def changeHomeState(command):
-	return
-
-def test():
-	voice_classifier = VoiceClassifier()
-	voice_classifier.start()
+# TODO Add feedback analyzer (with textblob)
 
 if __name__ == '__main__':
-	test()
+	voice_classifier = VoiceClassifier()
+	voice_classifier.start()
