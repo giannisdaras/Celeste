@@ -3,7 +3,7 @@ from ml.state_predictor import StatePredictor
 from ml.voice import VoiceClassifier
 import time
 import threading
-import word2vec
+import word2vec as w2v
 
 class MainController(threading.Thread):
 
@@ -12,7 +12,7 @@ class MainController(threading.Thread):
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
         self.running = True
-        self.w2v = word2vec.load(vocabulary_path)
+        self.word2vec = w2v.load(vocabulary_path)
 
     def run(self):
         # start all controllers as threads
