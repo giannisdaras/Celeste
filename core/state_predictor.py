@@ -1,5 +1,6 @@
 from __init__ import *
 
+
 class State:
     """
     This class holds state information
@@ -27,6 +28,7 @@ class State:
     def nameSub(self, x):
         print 'Subscriber called for ' + self.name
 
+
 class StatePredictor(multiprocessing.Process):
 
     """
@@ -36,6 +38,7 @@ class StatePredictor(multiprocessing.Process):
         the index = argmax(y_prob) is selected as the next state. This class can run as a
         multiprocessing.Process allowing for running different instances of it on different CPUs
     """
+
     def __init__(
             self,
             states,
@@ -46,8 +49,8 @@ class StatePredictor(multiprocessing.Process):
             initial_state=0,
             optimizer='adam',
             update_interval=1,
-            based_on_current_time = True,
-            based_on_previous_states = True,
+            based_on_current_time=True,
+            based_on_previous_states=True,
             queue=None):
         """Constructor class arguments:
             states : a dictionary of states
@@ -77,10 +80,10 @@ class StatePredictor(multiprocessing.Process):
         # x1: Previous State
         # x2: Current Time
         # x3, xN : flattened sensor inputs
-        self.num_inputs = (based_on_current_time == True) + (based_on_previous_states == True)
+        self.num_inputs = (based_on_current_time == True) + \
+            (based_on_previous_states == True)
         for s in self.sensors:
             self.num_inputs += s.output_ports
-
         self.num_classes = len(self.states)
 
         # Model configuration
@@ -204,6 +207,8 @@ class StatePredictor(multiprocessing.Process):
         return self.state.stateid == 0
 
 # Testcase
+
+
 def test():
     state_predictor = StatePredictor.DummyStatePredictor()
     state_predictor.start()
@@ -213,6 +218,7 @@ def test():
     time.sleep(5)
     print 'Thread continues'
     state_predictor.resume()
+
 
 if __name__ == '__main__':
     test()
