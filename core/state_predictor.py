@@ -1,11 +1,5 @@
 from __init__ import *
 
-
-def softmax(y):
-    z = np.exp(y)
-    return z / np.sum(z)
-
-
 class State:
     """
     This class holds state information

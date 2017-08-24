@@ -2,11 +2,9 @@
 
 # Controller
 from core.controllers import *
-from core.state_predictor import StatePredictor
 from core.voice import VoiceClassifier
 import time
 import threading
-import word2vec as w2v
 
 class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
