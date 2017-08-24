@@ -77,7 +77,7 @@ class ArduinoSensor(Sensor):
         return x
 
 # Enums for Arduino
-# TODO Add desired sensors
+# TODO Add desired sensors 
 
 class ArduinoSensors:
     pass

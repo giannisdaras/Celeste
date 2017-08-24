@@ -3,6 +3,7 @@
 # Controller
 from core.controllers import *
 from core.voice import VoiceClassifier
+from sklearn.naive_bayes import GaussianNB
 import time
 import threading
 
@@ -19,6 +20,19 @@ class MainController(threading.Thread):
         self.direct_command = direct_command
         self.queue = multiprocessing.Queue()  # thread queue
         self.pool = multiprocessing.Pool()
+        self.bayesian_classifier = GaussianNB()
+
+    def generate_samples(self, x_out='', y_out=''):
+        # TODO complete training by voice
+
+        self.train(x,y)
+
+    def train(self, x, y):
+
+        self.bayesian_classifier.fit(x,y)
+
+
+
 
     def run(self):
         # start all controllers as threads

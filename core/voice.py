@@ -4,12 +4,13 @@ global homeName
 homeName="home"
 
 class VoiceClassifier(multiprocessing.Process):
-	def __init__(self):
+	def __init__(self, prefix=homeName):
 		super(VoiceClassifier, self).__init__()
 		self.running = True
 		self.recognizer = sr.Recognizer()
 		self.triggered = False #Sets to true when it hears its name
 		self.instruction = '' #holds last instruction as string
+		self.prefix = prefix
 
 	def rec(self):
 		while True:
@@ -21,12 +22,10 @@ class VoiceClassifier(multiprocessing.Process):
 					try:
 						message=self.recognizer.recognize_google(audio1)
 						print('message was: ' + message)
-						if (homeName in message):
+						if (self.prefix in message):
 							self.triggered = True
-							text=message[message.index(homeName) + len(homeName) + 1:]
+							text=message[message.index(homeName) + len(self.prefix) + 1:]
 							self.instruction = text
-							if ("training" in text):
-								train(text)
 					except sr.UnknownValueError:
 						print('Untracked')
 					finally:
@@ -41,10 +40,6 @@ class VoiceClassifier(multiprocessing.Process):
 
 	def resume(self):
 		self.running = True
-
-def train(command):
-	print("Training")
-	return
 
 # TODO Add feedback analyzer (with textblob)
 
