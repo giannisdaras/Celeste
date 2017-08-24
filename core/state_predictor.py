@@ -1,5 +1,5 @@
 from __init__ import *
-from sensors import *
+
 
 def softmax(y):
     z = np.exp(y)
@@ -7,6 +7,9 @@ def softmax(y):
 
 
 class State:
+    """
+    This class holds state information
+    """
 
     def __init__(self, name, stateid):
         self.name = name
@@ -32,6 +35,13 @@ class State:
 
 class StatePredictor(multiprocessing.Process):
 
+    """
+        State Predictor Class. This class works like an NFA whose (predicted) next state is
+        based on the previous state, current time data and sensor inputs. The input is fed to
+        an neural network (MLP) in order to predict the probabilities of the next state and
+        the index = argmax(y_prob) is selected as the next state. This class can run as a
+        multiprocessing.Process allowing for running different instances of it on different CPUs
+    """
     def __init__(
             self,
             states,
@@ -45,6 +55,16 @@ class StatePredictor(multiprocessing.Process):
             based_on_current_time = True,
             based_on_previous_states = True,
             queue=None):
+        """Constructor class arguments:
+            states : a dictionary of states
+            sensors : a list of sensors
+            layout : MLP NN layout
+            initial_state : starting state
+            optimizer : model optimizer
+            update_interval : update intervals
+            based_on_current_time : feed current time to NN (datetime.datetime.now() objects)
+            based_on_previous_states : feed previous state to NN
+        """
         super(StatePredictor, self).__init__()
         # Initializations
         self.states = states  # states as dictionary
@@ -95,6 +115,9 @@ class StatePredictor(multiprocessing.Process):
             epochs=30,
             batch_size=128,
             delimiter=' '):
+        """ Train neural network using data either as file or as vectors.
+        (x,y) pairs should be given seperately """
+
         print 'Training'
         if isinstance(x, str) and isinstance(y, str):
             x = np.genfromtxt(x, delimiter=delimiter)
@@ -116,6 +139,7 @@ class StatePredictor(multiprocessing.Process):
         self.model.summary()
 
     def predict_next(self, x, verbose=True):
+        """ Predct next state index = argmax (y_prob) """
         y_prob = self.model.predict(np.array([x]))
         index = np.argmax(y_prob)
         if verbose:
@@ -126,9 +150,10 @@ class StatePredictor(multiprocessing.Process):
         return index
 
     def getData(self):
+        """ Get data from all sensors """
         x = np.array([])
         if self.based_on_current_time:
-            x = np.array(x, datetime.datetime.now().hour)
+            x = np.append(x, datetime.datetime.now().hour)
         if self.based_on_previous_states:
             x = np.append(x, self.state.stateid)
         for sensor in self.sensors:
@@ -137,6 +162,8 @@ class StatePredictor(multiprocessing.Process):
         return x
 
     def update(self, retrain=True):
+        """ Update NN """
+
         print 'Updating'
 
         x = self.getData()
@@ -173,25 +200,6 @@ class StatePredictor(multiprocessing.Process):
 
     def resume(self):
         self.running = True
-
-    @staticmethod
-    def DummyStatePredictor(update_interval=1):
-        sensors = [
-            DummySensor('number_of_people', 1, 0, 20),
-            DummySensor('mood', 1, 0, 10),
-            DummySensor('light', 1, 0, 255),
-            DummySensor('temperature', 1, 10, 40)
-        ]
-
-        states = {
-            0: State('do nothing', 0),
-            1: State('raise temperature', 1),
-            2: State('decrease temperature', 2),
-            3: State('turn on music', 3),
-            4: State('close shutters', 4),
-        }
-        state_predictor = StatePredictor(states, sensors, update_interval=update_interval)
-        return state_predictor
 
     @property
     def idle(self):

@@ -1,7 +1,29 @@
 from state_predictor import *
-from sensors import *
+from io import *
+
+# This class holds controllers for various features
 
 # TODO Finish controller setup
+
+# Example controlller
+class DummyController(StatePredictor):
+
+    def __init__(self, update_interval = 1):
+        sensors = [
+            DummySensor('number_of_people', 1, 0, 20),
+            DummySensor('mood', 1, 0, 10),
+            DummySensor('light', 1, 0, 255),
+            DummySensor('temperature', 1, 10, 40)
+        ]
+
+        states = {
+            0: State('do nothing', 0),
+            1: State('raise temperature', 1),
+            2: State('decrease temperature', 2),
+            3: State('turn on music', 3),
+            4: State('close shutters', 4),
+        }
+        super(DummyController, self).__init__(states, sensors, update_interval=update_interval)
 
 class EnergySaverController(StatePredictor):
 
@@ -14,7 +36,7 @@ class EnergySaverController(StatePredictor):
             4 : 'decrease temperature',
         }
         sensors = []
-        super(self, EnergySaverController).__init__(states, sensors)
+        super(EnergySaverController, self).__init__(states, sensors)
 
 
 
@@ -28,7 +50,7 @@ class PlantWateringController(StatePredictor):
         }
         states[1].addSubscriber(PlantWateringController.water)
         sensors = []
-        super(self, PlantWateringController).__init__(states, sensors)
+        super(PlantWateringController, self).__init__(states, sensors)
 
     @staticmethod
     def water(x):
@@ -46,7 +68,7 @@ class FridgeController(StatePredictor):
         states[2].addSubscriber(FridgeController.decrease_temperature)
 
         sensors = []
-        super(self, FridgeController).__init__(states, sensors)
+        super(FridgeController, self).__init__(states, sensors)
 
     @staticmethod
     def increase_temperature(x):
@@ -67,7 +89,7 @@ class AlarmController(StatePredictor):
         states[1].addSubscriber(AlarmController.alarm)
         states[2].addSubscriber(AlarmController.snooze)
         sensors = []
-        super(self, AlarmController).__init__(states, sensors)
+        super(AlarmController, self).__init__(states, sensors)
 
     @staticmethod
     def alarm(x):
@@ -86,7 +108,7 @@ class PetFeederController(StatePredictor):
         }
         states[1].addSubscriber(PetFeederController.feed)
         sensors = [] # TODO add desired sensors
-        super(self, PetFeederController).__init__(states, sensors)
+        super(PetFeederController, self).__init__(states, sensors)
 
     @staticmethod
     def feed(x):

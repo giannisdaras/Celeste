@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Controller
 from core.controllers import *
 from core.state_predictor import StatePredictor
@@ -7,14 +9,16 @@ import threading
 import word2vec as w2v
 
 class MainController(threading.Thread):
-
-    def __init__(self, controllers, voice_recognizer, vocabulary_path='', direct_command=False):
+    """ This class holds main controller that is responsible for synchronizing the
+    rest of the controllers. Due to GIL it is obliged to be a threading.Thread"""
+    def __init__(self, controllers, voice_recognizer=VoiceClassifier(), direct_command=False):
         super(MainController, self).__init__()
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
         self.running = True
         self.direct_command = direct_command
         self.queue = multiprocessing.Queue() #thread queue
+        self.pool = multiprocessing.Pool()
 
     def run(self):
         # start all controllers as threads
@@ -48,5 +52,5 @@ class MainController(threading.Thread):
         self.running = True
 
 if __name__ == '__main__':
-    main_controller = MainController([StatePredictor.DummyStatePredictor(update_interval=10)], VoiceClassifier())
+    main_controller = MainController([DummyController(update_interval=10)])
     main_controller.start()
