@@ -1,6 +1,7 @@
 from __init__ import *
 
-def get_board(num_tries = 10):
+
+def get_board(num_tries=10):
     for i in range(num_tries):
         try:
             board = PyMata('/dev/ttyACM{0}'.format(i))
@@ -10,6 +11,7 @@ def get_board(num_tries = 10):
     return None
 
 # Sensing
+
 
 class Sensor:
 
@@ -50,6 +52,7 @@ class Camera(Sensor):
     def __del__(self):
         self.cam.release()
 
+
 class ArduinoPin:
 
     def __init__(self, pin, mode, pintype):
@@ -58,6 +61,7 @@ class ArduinoPin:
         self.mode = mode
         self.pintype = pintype
 
+
 class ArduinoSensor(Sensor):
 
     def __init__(self, name, output_ports, board, input_pins=[]):
@@ -65,10 +69,10 @@ class ArduinoSensor(Sensor):
         self.board = board
         self.input_pins = input_pins
 
-        #setup board
+        # setup board
         for pin in input_pins:
             self.board.set_pin_mode(pin.pin, self.board.INPUT if pin.mode == 'INPUT' else self.board.PWM,
-            self.board.DIGITAL if pin.pintype=='DIGITAL' else self.board.ANALOG)
+                                    self.board.DIGITAL if pin.pintype == 'DIGITAL' else self.board.ANALOG)
 
     def getData(self):
         x = np.array([])
@@ -77,10 +81,12 @@ class ArduinoSensor(Sensor):
         return x
 
 # Enums for Arduino
-# TODO Add desired sensors 
+# TODO Add desired sensors
+
 
 class ArduinoSensors:
     pass
+
 
 class ArduinoOutputs:
     pass

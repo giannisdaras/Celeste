@@ -21,18 +21,30 @@ class MainController(threading.Thread):
         self.queue = multiprocessing.Queue()  # thread queue
         self.pool = multiprocessing.Pool()
         self.bayesian_classifier = GaussianNB()
+        self.hashed_states = {}  # TODO hash pairs
 
-    def generate_samples(self, x_out='', y_out=''):
-        # TODO complete training by voice
+        x = 0
+        for i in range(len(self.controllers)):
+            for j in range(len(self.controllers[i])):
+                self.hashed_states[i, j] = x
+                x += 1
 
-        self.train(x,y)
+    def generate_samples(self):
+        pass
 
     def train(self, x, y):
+        self.bayesian_classifier.fit(x, y)
 
-        self.bayesian_classifier.fit(x,y)
+    def changeState(self, i, k, wait_interval=0.5):
+        self.controllers[i].state = self.controllers[i].states[k]
+        self.controllers[i].state.onActivation(self.controllers[i].getData())
+        time.sleep(wait_interval)
+        self.controllers[i].resume()
 
-
-
+    def joinAll(self):
+        for controller in self.controllers:
+            controller.join()
+        self.voice_recognizer.join()
 
     def run(self):
         # start all controllers as threads
@@ -40,25 +52,23 @@ class MainController(threading.Thread):
             controller.start()
         # start voice recognition
         self.voice_recognizer.start()
-
         # main thread body
         while True:
             while self.running:
                 if self.voice_recognizer.triggered:
                     print 'Stop State Prediction and to force voice command'
                     # Find corresponding state
-                    # TODO use sentiment analysis with word2vec
 
                     if self.direct_command:
-                        for controller in self.controllers:
+                        for (i, controllers) in enumerate(self.controllers):
                             for k in controller.states.keys():
                                 if controller.states[k].name == voice_recognizer.instruction:
-                                    print 'Voice command alters state to: ' + controller.states[k].name
-                                    controller.state = controller.states[k]
-                                    controller.state.onActivation(
-                                        controller.getData())
-                                    time.sleep(2)
-                                    controller.resume()
+                                    self.changeState(i, k)
+                    else:
+                        y = self.bayesian_classifier.predict(
+                            voice_recognizer.instruction)
+                        try:
+                            self.changeState(*self.hashed_states[y])
 
     def pause(self):
         self.running = False

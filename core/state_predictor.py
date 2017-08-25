@@ -33,7 +33,7 @@ class StatePredictor(multiprocessing.Process):
 
     """
         State Predictor Class. This class works like an NFA whose (predicted) next state is
-        based on the previous state, current time data and sensor inputs. The input is fed to
+        based on the previous state (like an RNN), current time data and sensor inputs. The input is fed to
         an neural network (MLP) in order to predict the probabilities of the next state and
         the index = argmax(y_prob) is selected as the next state. This class can run as a
         multiprocessing.Process allowing for running different instances of it on different CPUs
