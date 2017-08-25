@@ -3,7 +3,10 @@
 # Controller
 from core.controllers import *
 from core.voice import VoiceClassifier
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.pipeline import Pipeline
 import time
 import threading
 
@@ -20,7 +23,10 @@ class MainController(threading.Thread):
         self.direct_command = direct_command
         self.queue = multiprocessing.Queue()  # thread queue
         self.pool = multiprocessing.Pool()
-        self.bayesian_classifier = GaussianNB()
+        self.bayesian_classifier = Pipeline([('vect', CountVectorizer()),
+                                             ('tfidf', TfidfTransformer(
+                                                 use_idf=False)),
+                                             ('clf', MultinomialNB()), ])
         self.hashed_states = {}  # TODO hash pairs
 
         x = 0
@@ -69,6 +75,9 @@ class MainController(threading.Thread):
                             voice_recognizer.instruction)
                         try:
                             self.changeState(*self.hashed_states[y])
+                        except KeyError:
+                            print 'Command not found'
+                            continue
 
     def pause(self):
         self.running = False
