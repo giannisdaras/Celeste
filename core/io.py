@@ -109,7 +109,7 @@ class LightSensor(ArduinoSensor):
     pass
 
 class TemperatureSensor(ArduinoSensor):
-    pass
+    pass    
 
 class ArduinoSensors:
     pass
