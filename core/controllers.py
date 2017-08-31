@@ -25,7 +25,7 @@ class DummyController(StatePredictor):
         }
         super(DummyController, self).__init__(states, sensors, update_interval=update_interval)
 
-class EnergySaverController(StatePredictor):
+class LightController(StatePredictor):
 
     def __init__(self):
         states = {
@@ -36,7 +36,7 @@ class EnergySaverController(StatePredictor):
             4 : 'decrease temperature',
         }
         sensors = []
-        super(EnergySaverController, self).__init__(states, sensors)
+        super(LightController, self).__init__(states, sensors)
 
 
 

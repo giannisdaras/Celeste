@@ -35,10 +35,7 @@ class MainController(threading.Thread):
                 self.hashed_states[i, j] = x
                 x += 1
 
-    def generate_samples(self):
-        pass
-
-    def train(self, x, y):
+    def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
 
     def changeState(self, i, k, wait_interval=0.5):
