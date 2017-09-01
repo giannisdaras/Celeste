@@ -12,7 +12,7 @@ def get_board(num_tries=10):
 # Sensing
 
 
-class Sensor:
+class Sensor(object):
 
     def __init__(self, name, output_ports):
         self.name = name
@@ -36,11 +36,10 @@ class DummySensor(Sensor):
 
 class Camera(Sensor):
 
-    def __init__(self, name, index):
+    def __init__(self, name='cam', index=0):
         self.cam = cv2.VideoCapture(index)
         ret, frame = self.cam.read()
-        frame = frame.flatten()
-        super(Camera, self).__init__(name, frame.shape[0])
+        super(Camera, self).__init__(name=name, output_ports=frame.shape[0]*frame.shape[1])
 
     def getData(self, grayscale=True):
         ret, frame = self.cam.read()
@@ -115,7 +114,13 @@ class ArduinoSensors:
 class ArduinoOutputs:
     pass
 
+
+class CommTestCases(unittest.TestCase):
+
+    def testLEDArray(self):
+        ledarray = LEDArray('larray', get_board(), input_pins=[13])
+        ledarray.writeLeds([1])
+        print ledarray.getData()
+
 if __name__ == '__main__':
-    ledarray = LEDArray('larray', get_board(), input_pins=[13])
-    ledarray.writeLeds([1])
-    print ledarray.getData()
+    c = Camera()

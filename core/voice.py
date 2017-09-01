@@ -3,8 +3,7 @@ from __init__ import *
 global homeName
 homeName = "home"
 
-
-class VoiceClassifier(multiprocessing.Process):
+class VoiceRecognizer(multiprocessing.Process):
     def __init__(self, prefix=homeName):
         super(VoiceClassifier, self).__init__()
         self.running = True
@@ -26,7 +25,7 @@ class VoiceClassifier(multiprocessing.Process):
                         if (self.prefix in message):
                             self.triggered = True
                             text = message[message.index(
-                                homeName) + len(self.prefix) + 1:]
+                                self.prefix) + len(self.prefix) + 1:]
                             self.instruction = text
                     except sr.UnknownValueError:
                         print('Untracked')
@@ -43,9 +42,12 @@ class VoiceClassifier(multiprocessing.Process):
     def resume(self):
         self.running = True
 
-# TODO Add feedback analyzer (with textblob)
+# TODO Add classification class 
+
+class VoiceCommandClassifier(VoiceRecognizer):
+    pass
 
 
 if __name__ == '__main__':
-    voice_classifier = VoiceClassifier()
-    voice_classifier.start()
+    voice_recognizer = VoiceRecognizer()
+    voice_recognizer.start()

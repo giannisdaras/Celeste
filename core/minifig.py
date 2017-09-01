@@ -1,18 +1,22 @@
 from __init__ import *
 from comm import *
 
+
 class MinifigDetector(multiprocessing.Process):
 
-    def __init__(self, camera, update_interval=1 , size=(100,100)):
+    def __init__(self, camera=Camera(), update_interval=10, size=(100, 100)):
+        super(MinifigDetector, self).__init__()
         self.model = Sequential()
         self.camera = camera
         self.size = size
-        self.model.add(Convolution2D(16, kernel_size=(3,3), padding='same', activation='relu', input_shape=(size[0], size[1], 1)))
-        self.model.add(MaxPooling2D(pool_size=(2,2)))
+        self.model.add(Convolution2D(16, kernel_size=(
+            3, 3), padding='same', activation='relu', input_shape=(size[0], size[1], 1)))
+        self.model.add(MaxPooling2D(pool_size=(2, 2)))
         self.model.add(Dropout(0.5))
 
-        self.model.add(Convolution2D(32, kernel_size=(3,3), padding='same', activation='relu'))
-        self.model.add(MaxPooling2D(pool_size=(2,2)))
+        self.model.add(Convolution2D(32, kernel_size=(
+            3, 3), padding='same', activation='relu'))
+        self.model.add(MaxPooling2D(pool_size=(2, 2)))
         self.model.add(Dropout(0.5))
 
         self.model.add(Flatten())
@@ -36,9 +40,9 @@ class MinifigDetector(multiprocessing.Process):
         os.chdir(current_dir)
 
     def transform(self, tmp):
-        tmp = cv2.cvtColor(cv2.COLOR_BGR2GRAY)
-        tmp = cv2.imresize(tmp, self.size)
-        tmp = tmp.reshape((size[0], size[0], 1))
+        tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
+        tmp = cv2.resize(tmp, self.size)
+        tmp = tmp.reshape((self.size[0], self.size[0], 1))
         return tmp
 
     def update(self):
@@ -58,8 +62,3 @@ class MinifigDetector(multiprocessing.Process):
             while self.running:
                 self.update()
                 time.sleep(self.update_interval)
-
-
-if __name__ == '__main__':
-    minifig_detector = MinifigDetector(Camera(0))
-    print minifig_detector.update()
