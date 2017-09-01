@@ -1,6 +1,5 @@
 from __init__ import *
 
-
 def get_board(num_tries=10):
     for i in range(num_tries):
         try:
@@ -13,7 +12,7 @@ def get_board(num_tries=10):
 # Sensing
 
 
-class Sensor:
+class Sensor(object):
 
     def __init__(self, name, output_ports):
         self.name = name
@@ -37,11 +36,10 @@ class DummySensor(Sensor):
 
 class Camera(Sensor):
 
-    def __init__(self, name, index):
+    def __init__(self, name='cam', index=0):
         self.cam = cv2.VideoCapture(index)
         ret, frame = self.cam.read()
-        frame = frame.flatten()
-        super(Camera, self).__init__(name, frame.shape[0])
+        super(Camera, self).__init__(name=name, output_ports=frame.shape[0]*frame.shape[1])
 
     def getData(self, grayscale=True):
         ret, frame = self.cam.read()
@@ -65,7 +63,7 @@ class ArduinoPin:
 class ArduinoSensor(Sensor):
 
     def __init__(self, name, output_ports, board, input_pins=[]):
-        super(self, ArduinoSensor).__init__(name, output_ports)
+        super(ArduinoSensor, self).__init__(name, output_ports)
         self.board = board
         self.input_pins = input_pins
 
@@ -83,6 +81,31 @@ class ArduinoSensor(Sensor):
 # Enums for Arduino
 # TODO Add desired sensors
 
+class LEDArray(ArduinoSensor):
+
+    def __init__(self, name, board, input_pins=[]):
+        super(LEDArray, self).__init__(name, len(input_pins), board, input_pins)
+
+        for pin in input_pins:
+            self.board.set_pin_mode(pin, board.OUTPUT, board.DIGITAL)
+
+    def getData(self):
+        self.board.capability_query()
+        x = np.array([])
+        response = self.board.get_digital_response_table()
+        for x_ in response:
+            x = np.append(x, [x_[0]])
+        return x
+
+    def writeLeds(self, leds):
+        for i in range(len(self.input_pins)):
+            self.board.digital_write(self.input_pins[i], leds[i])
+
+class LightSensor(ArduinoSensor):
+    pass
+
+class TemperatureSensor(ArduinoSensor):
+    pass
 
 class ArduinoSensors:
     pass
@@ -90,3 +113,14 @@ class ArduinoSensors:
 
 class ArduinoOutputs:
     pass
+
+
+class CommTestCases(unittest.TestCase):
+
+    def testLEDArray(self):
+        ledarray = LEDArray('larray', get_board(), input_pins=[13])
+        ledarray.writeLeds([1])
+        print ledarray.getData()
+
+if __name__ == '__main__':
+    c = Camera()

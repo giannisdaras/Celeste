@@ -15,7 +15,7 @@ class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
     rest of the controllers. Due to GIL it is obliged to be a threading.Thread"""
 
-    def __init__(self, controllers, voice_recognizer=VoiceClassifier(), direct_command=False):
+    def __init__(self, controllers, voice_recognizer=VoiceRecognizer(), direct_command=False):
         super(MainController, self).__init__()
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
@@ -35,10 +35,7 @@ class MainController(threading.Thread):
                 self.hashed_states[i, j] = x
                 x += 1
 
-    def generate_samples(self):
-        pass
-
-    def train(self, x, y):
+    def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
 
     def changeState(self, i, k, wait_interval=0.5):
@@ -51,6 +48,12 @@ class MainController(threading.Thread):
         for controller in self.controllers:
             controller.join()
         self.voice_recognizer.join()
+
+    def shutDown(self):
+        for controller in self.controllers:
+            controller.terminate()
+        self.voice_recognizer.terminate()
+        self.joinAll()
 
     def run(self):
         # start all controllers as threads
