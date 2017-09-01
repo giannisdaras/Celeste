@@ -1,7 +1,4 @@
-#from __init__ import *
-
-from PyMata.pymata import PyMata
-import numpy as np
+from __init__ import *
 
 def get_board(num_tries=10):
     for i in range(num_tries):
@@ -109,7 +106,7 @@ class LightSensor(ArduinoSensor):
     pass
 
 class TemperatureSensor(ArduinoSensor):
-    pass    
+    pass
 
 class ArduinoSensors:
     pass

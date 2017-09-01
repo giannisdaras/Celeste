@@ -1,5 +1,5 @@
 from __init__ import *
-import io
+from comm import *
 
 class MinifigDetector(multiprocessing.Process):
 
@@ -7,11 +7,11 @@ class MinifigDetector(multiprocessing.Process):
         self.model = Sequential()
         self.camera = camera
         self.size = size
-        self.model.add(Convolution2D(32, kernel_size=(3,3), padding='same', activation='relu', input_shape(size[0], size[1], 1)))
+        self.model.add(Convolution2D(16, kernel_size=(3,3), padding='same', activation='relu', input_shape=(size[0], size[1], 1)))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(0.5))
 
-        self.model.add(Convolution2D(32, kernel_size=(3,3), padding='same', activation='relu', input_shape(size[0], size[1], 1)))
+        self.model.add(Convolution2D(32, kernel_size=(3,3), padding='same', activation='relu'))
         self.model.add(MaxPooling2D(pool_size=(2,2)))
         self.model.add(Dropout(0.5))
 
@@ -61,4 +61,5 @@ class MinifigDetector(multiprocessing.Process):
 
 
 if __name__ == '__main__':
-    minifig_detector = MinifigDetector()
+    minifig_detector = MinifigDetector(Camera(0))
+    print minifig_detector.update()
