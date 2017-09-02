@@ -5,7 +5,7 @@ homeName = "home"
 
 class VoiceRecognizer(multiprocessing.Process):
     def __init__(self, prefix=homeName):
-        super(VoiceClassifier, self).__init__()
+        super(VoiceRecognizer, self).__init__()
         self.running = True
         self.recognizer = sr.Recognizer()
         self.triggered = False  # Sets to true when it hears its name
@@ -42,12 +42,19 @@ class VoiceRecognizer(multiprocessing.Process):
     def resume(self):
         self.running = True
 
-# TODO Add classification class
+# TODO Add classification class with bayesian classifier
 
 class VoiceCommandClassifier(VoiceRecognizer):
     pass
 
+class VoiceRecognizerUnittest(unittest.TestCase):
+
+    def test_voice_recognizer(self):
+        voice_recognizer = VoiceRecognizer()
+        voice_recognizer.start()
+        time.sleep(20)
+        voice_recognizer.terminate()
+        voice_recognizer.join()
 
 if __name__ == '__main__':
-    voice_recognizer = VoiceRecognizer()
-    voice_recognizer.start()
+    unittest.main()
