@@ -1,13 +1,21 @@
 from __init__ import *
 
+
+class BoardNotFoundException(Exception):
+
+    def __init__(self):
+        msg = 'board not found'
+        super(BoardNotFoundException, self).__init__(msg)
+
+
 def get_board(num_tries=10):
     for i in range(num_tries):
         try:
-            board = PyMata('/dev/ttyACM{0}'.format(i))
+            board = PyMata('/dev/ttyACM{0}'.format(i), verbose=False)
             return board
         except:
             continue
-    return None
+    raise BoardNotFoundException()
 
 # Sensing
 
@@ -20,6 +28,9 @@ class Sensor(object):
 
     def getData(self):
         return None
+
+    def __len__(self):
+        return self.output_ports
 
 
 class DummySensor(Sensor):
@@ -39,7 +50,8 @@ class Camera(Sensor):
     def __init__(self, name='cam', index=0):
         self.cam = cv2.VideoCapture(index)
         ret, frame = self.cam.read()
-        super(Camera, self).__init__(name=name, output_ports=frame.shape[0]*frame.shape[1])
+        super(Camera, self).__init__(
+            name=name, output_ports=frame.shape[0] * frame.shape[1])
 
     def getData(self, grayscale=True):
         ret, frame = self.cam.read()
@@ -51,76 +63,94 @@ class Camera(Sensor):
         self.cam.release()
 
 
-class ArduinoPin:
-
-    def __init__(self, pin, mode, pintype):
-        # TODO add property setters and getters
-        self.pin = pin
-        self.mode = mode
-        self.pintype = pintype
-
-
-class ArduinoSensor(Sensor):
-
-    def __init__(self, name, output_ports, board, input_pins=[]):
-        super(ArduinoSensor, self).__init__(name, output_ports)
-        self.board = board
-        self.input_pins = input_pins
-
-        # setup board
-        for pin in input_pins:
-            self.board.set_pin_mode(pin.pin, self.board.INPUT if pin.mode == 'INPUT' else self.board.PWM,
-                                    self.board.DIGITAL if pin.pintype == 'DIGITAL' else self.board.ANALOG)
-
-    def getData(self):
-        x = np.array([])
-        for pin in self.input_pins:
-            x = np.append(x, self.board.analog_read(pin.pin))
-        return x
-
-# Enums for Arduino
-# TODO Add desired sensors
-
-class LEDArray(ArduinoSensor):
+class ArduinoDigitalSensor(Sensor):
 
     def __init__(self, name, board, input_pins=[]):
-        super(LEDArray, self).__init__(name, len(input_pins), board, input_pins)
+        super(ArduinoDigitalSensor, self).__init__(name, output_ports=len(input_pins))
+        self.board = board
+        self.input_pins = input_pins
+        for p in input_pins:
+            self.board.set_pin_mode(p, board.INPUT, board.DIGITAL)
+
+    def getData(self):
+        try:
+            self.board.capability_query()
+            x = np.array([])
+            response = self.board.get_analog_response_table()
+            for p in self.input_pins:
+                x = np.append(x, response[p][0])
+            return x
+        except:
+            return None
+
+    def writeData(self, x):
+        assert(len(x) == len(self.input_pins))
+        try:
+            for i in range(len(self.input_pins)):
+                self.board.digital_write(self.input_pins[i], x[i])
+            return True
+        except:
+            return False
+
+
+class ArduinoAnalogSensor(Sensor):
+
+    def __init__(self, name, board, input_pins=[]):
+        super(ArduinoAnalogSensor, self).__init__(name, output_ports=len(input_pins))
+        self.board = board
+        self.input_pins = input_pins
+        for p in input_pins:
+            self.board.set_pin_mode(p, board.INPUT, board.ANALOG)
+
+    def getData(self):
+        try:
+            self.board.capability_query()
+            x = np.array([])
+            response = self.board.get_analog_response_table()
+
+            for p in self.input_pins:
+                x = np.append(x, response[p][0])
+            return x
+        except:
+            return None
+
+    def writeData(self, x):
+        assert(len(x) == len(self.input_pins))
+        try:
+            for i in range(len(self.input_pins)):
+                self.board.analog_write(self.input_pins[i], x[i])
+            return True
+        except:
+            return False
+# Enums for Arduino
+
+# TODO Add desired sensors
+
+
+class LEDArray(ArduinoDigitalSensor):
+
+    def __init__(self, name, board, input_pins=[]):
+        super(LEDArray, self).__init__(
+            name, len(input_pins), board, input_pins)
 
         for pin in input_pins:
             self.board.set_pin_mode(pin, board.OUTPUT, board.DIGITAL)
 
-    def getData(self):
-        self.board.capability_query()
-        x = np.array([])
-        response = self.board.get_digital_response_table()
-        for x_ in response:
-            x = np.append(x, [x_[0]])
-        return x
-
-    def writeLeds(self, leds):
-        for i in range(len(self.input_pins)):
-            self.board.digital_write(self.input_pins[i], leds[i])
-
-class LightSensor(ArduinoSensor):
-    pass
-
-class TemperatureSensor(ArduinoSensor):
-    pass
-
-class ArduinoSensors:
-    pass
-
-
-class ArduinoOutputs:
-    pass
-
-
 class CommTestCases(unittest.TestCase):
 
+    def setUp(self):
+        self.board = get_board()
+
     def testLEDArray(self):
-        ledarray = LEDArray('larray', get_board(), input_pins=[13])
+        ledarray = LEDArray('larray', self.board, input_pins=[13])
         ledarray.writeLeds([1])
         print ledarray.getData()
 
+    def testLightSensor(self):
+        ls = ArduinoAnalogSensor('light', self.board, input_pins=[0])
+        for i in range(10):
+            print ls.getData()
+
+
 if __name__ == '__main__':
-    c = Camera()
+    unittest.main()
