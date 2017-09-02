@@ -9,6 +9,8 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 import time
 import threading
+import psycopg2
+import sys
 
 
 class MainController(threading.Thread):
@@ -34,6 +36,10 @@ class MainController(threading.Thread):
             for j in range(len(self.controllers[i])):
                 self.hashed_states[i, j] = x
                 x += 1
+        try:
+    		self.conn = psycopg2.connect("dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
+		except:
+			sys.exit(0)
 
     def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
@@ -56,6 +62,12 @@ class MainController(threading.Thread):
         self.joinAll()
 
     def run(self):
+    	self.cur = conn.cursor()
+    	self.cur.execute('select from settings where id==1')
+    	first_time=self.cur.fetch_all()[2]
+    	if (first_time=='true'):
+    		self.configure()
+
         # start all controllers as threads
         for controller in self.controllers:
             controller.start()
@@ -87,6 +99,9 @@ class MainController(threading.Thread):
 
     def resume(self):
         self.running = True
+
+    def configure(self):
+    	pass
 
 
 if __name__ == '__main__':
