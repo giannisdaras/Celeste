@@ -32,8 +32,6 @@ class MainController(threading.Thread):
                                              ('tfidf', TfidfTransformer(
                                                  use_idf=False)),
                                              ('clf', MultinomialNB()), ])
-        self.talk = pyttsx.init()
-
         # DB connection
         try:
             self.conn = psycopg2.connect(
@@ -110,14 +108,21 @@ class MainController(threading.Thread):
     def resume(self):
         self.running = True
 
+    def talk(self,text):
+        obj = pyttsx.init()
+        obj.setProperty('rate',obj.getProperty('rate')-50)
+        obj.say(text)
+        obj.runAndWait()
+        del obj
+        return
+
     def configure(self):
-        self.talk.say(
-            'Welcome owner! I would like to know a few things about you!')
-        self.talk.runAndWait()
-        # self.talk.say('What is your favourite color?')
-        # self.talk.runAndWait()
-        # at response color
-        pass
+        self.talk('Hey')
+        self.talk('Hello')
+
+
+        
+        
 
 
 class MainControllerUnittest(unittest.TestCase):
@@ -135,6 +140,6 @@ class MainControllerUnittest(unittest.TestCase):
 if __name__ == '__main__':
     main_controller = MainController(
         [DummyController(update_interval=2)])
-    main_controller.start()
-    time.sleep(3)
-    main_controller.shutDown()
+    # main_controller.start()
+    # time.sleep(3)
+    #main_controller.shutDown()

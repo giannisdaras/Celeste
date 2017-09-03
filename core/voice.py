@@ -1,4 +1,5 @@
 from __init__ import *
+import inspect
 
 global homeName
 homeName = "home"
@@ -13,7 +14,6 @@ class VoiceRecognizer(multiprocessing.Process):
         self.prefix = prefix
 
     def rec(self):
-        print(1)
         with sr.Microphone() as source:
             self.recognizer.adjust_for_ambient_noise(source)
             audio1 = self.recognizer.listen(source)
@@ -41,6 +41,7 @@ class VoiceRecognizer(multiprocessing.Process):
 
     def resume(self):
         self.running = True
+
 
 # TODO Add classification class with bayesian classifier
 
