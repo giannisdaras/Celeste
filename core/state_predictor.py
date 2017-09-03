@@ -104,6 +104,8 @@ class StatePredictor(multiprocessing.Process):
                            optimizer=optimizer,
                            metrics=['accuracy'])
 
+
+
     def train(
             self,
             x,
@@ -158,7 +160,7 @@ class StatePredictor(multiprocessing.Process):
             x = np.append(x, d)
         return x
 
-    def update(self, retrain=True):
+    def update(self, retrain=False):
         """ Update NN """
 
         print 'Updating'

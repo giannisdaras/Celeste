@@ -2,49 +2,74 @@
 
 # Controller
 from core.controllers import *
-from core.voice import VoiceClassifier
+from core.voice import VoiceCommandClassifier
+from core.voice import VoiceRecognizer, VoiceRecognizerModes
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 import time
 import threading
+import psycopg2
+import sys
+import pyttsx
+import pyaudio
+
+global ASSISTANT_NAME
+ASSISTANT_NAME = "Celeste"
 
 
 class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
     rest of the controllers. Due to GIL it is obliged to be a threading.Thread"""
 
-    def __init__(self, controllers, voice_recognizer=VoiceClassifier(), direct_command=False):
+    def __init__(self, controllers, voice_recognizer=VoiceRecognizer(), direct_command=False):
         super(MainController, self).__init__()
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
-        self.running = True
-        self.direct_command = direct_command
+
         self.queue = multiprocessing.Queue()  # thread queue
         self.pool = multiprocessing.Pool()
+        self.running = True
+        self.kill = False
+
+        self.direct_command = direct_command
+
         self.bayesian_classifier = Pipeline([('vect', CountVectorizer()),
                                              ('tfidf', TfidfTransformer(
                                                  use_idf=False)),
                                              ('clf', MultinomialNB()), ])
-        self.hashed_states = {}  # TODO hash pairs
 
+        # DB connection
+        try:
+            self.conn = psycopg2.connect(
+                "dbname='Celeste' user='postgres' host='localhost' password='1234'")
+        except:
+            raise Exception('Could not find database. Exiting now')
+            sys.exit(1)
+        self.cur = self.conn.cursor()
+        self.cur.execute('select * from settings')
+        self.first_time = self.cur.fetchall()[0]
+        if (self.first_time):
+            self.configure()
+
+        self.hashed_states = {}  # TODO hash pairs
         x = 0
         for i in range(len(self.controllers)):
-            for j in range(len(self.controllers[i])):
+            for j in range(len(self.controllers[i].states)):
                 self.hashed_states[i, j] = x
                 x += 1
 
-    def generate_samples(self):
-        pass
-
-    def train(self, x, y):
+    def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
 
     def changeState(self, i, k, wait_interval=0.5):
         self.controllers[i].state = self.controllers[i].states[k]
         self.controllers[i].state.onActivation(self.controllers[i].getData())
         time.sleep(wait_interval)
+        y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
+        x = self.constrollers[i].getData()
+        self.constrollers[i].model.train_on_batch(np.array([x]), y)
         self.controllers[i].resume()
 
     def joinAll(self):
@@ -52,16 +77,32 @@ class MainController(threading.Thread):
             controller.join()
         self.voice_recognizer.join()
 
+    def shutDown(self):
+        try:
+            for controller in self.controllers:
+                controller.terminate()
+            self.voice_recognizer.terminate()
+            self.joinAll()
+            self.pause()
+            self.kill = True
+            super(MainController, self).join()
+            print 'Terminated everything'
+            return True
+        except:
+            return False
+
     def run(self):
         # start all controllers as threads
         for controller in self.controllers:
             controller.start()
+
         # start voice recognition
         self.voice_recognizer.start()
+
         # main thread body
         while True:
             while self.running:
-                if self.voice_recognizer.triggered:
+                if self.voice_recognizer.triggered and self.voice_recognizer.mode == VoiceRecognizerModes.COMMAND:
                     print 'Stop State Prediction and to force voice command'
                     # Find corresponding state
 
@@ -78,6 +119,8 @@ class MainController(threading.Thread):
                         except KeyError:
                             print 'Command not found'
                             continue
+            if self.kill:
+                return
 
     def pause(self):
         self.running = False
@@ -85,7 +128,55 @@ class MainController(threading.Thread):
     def resume(self):
         self.running = True
 
+    def talk(self, text):
+        obj = pyttsx.init()
+        obj.setProperty('rate', obj.getProperty('rate') - 45)
+        obj.setProperty('voice','english+f4')
+        obj.say(text)
+        obj.runAndWait()
+        del obj
+        time.sleep(0.5)
+        return
+
+    def configure(self):
+        self.talk("Hello, user! I would like to know a few things about you!")
+        self.talk("But first let me introduce myself. My name is {0}; your new smart home assistant".format(
+            ASSISTANT_NAME))
+        self.talk(
+            "You will soon realize that you need to care almost for nothing cause this smart home behaves in an exciting way")
+        self.talk(
+            "Everything is tailor-made tou your habbits and automated tasks will take place all of the time")
+        self.talk("So relax and let the fun begin!")
+
+        #Do some configuration stuff
+
+        # alter mode to command mode
+        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+
+    @property
+    def instruction(self):
+        return voice_recognizer.instruction.split(' ')
+
+    @instruction.getter
+    def instruction(self):
+        return voice_recognizer.instruction.split(' ')
+
+
+class MainControllerUnittest(unittest.TestCase):
+
+    def setUp(self):
+        self.main_controller = MainController(
+            [DummyController(update_interval=2)])
+
+    def test_dummy(self):
+        self.main_controller.start()
+        time.sleep(10)
+        self.main_controller.shutDown()
+
 
 if __name__ == '__main__':
-    main_controller = MainController([DummyController(update_interval=10)])
+    main_controller = MainController(
+        [DummyController(update_interval=2)])
     main_controller.start()
+    time.sleep(3)
+    main_controller.shutDown()
