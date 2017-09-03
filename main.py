@@ -131,6 +131,7 @@ class MainController(threading.Thread):
     def talk(self, text):
         obj = pyttsx.init()
         obj.setProperty('rate', obj.getProperty('rate') - 45)
+        obj.setProperty('voice','english+f4')
         obj.say(text)
         obj.runAndWait()
         del obj
