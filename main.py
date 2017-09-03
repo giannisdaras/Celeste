@@ -60,6 +60,9 @@ class MainController(threading.Thread):
         self.controllers[i].state = self.controllers[i].states[k]
         self.controllers[i].state.onActivation(self.controllers[i].getData())
         time.sleep(wait_interval)
+        y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
+        x = self.constrollers[i].getData()
+        self.constrollers[i].model.train_on_batch(np.array([x]), y)
         self.controllers[i].resume()
 
     def joinAll(self):

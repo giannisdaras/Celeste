@@ -104,7 +104,7 @@ class StatePredictor(multiprocessing.Process):
                            optimizer=optimizer,
                            metrics=['accuracy'])
 
-        self.retrain = False
+
 
     def train(
             self,
@@ -160,7 +160,7 @@ class StatePredictor(multiprocessing.Process):
             x = np.append(x, d)
         return x
 
-    def update(self):
+    def update(self, retrain=False):
         """ Update NN """
 
         print 'Updating'
@@ -173,7 +173,7 @@ class StatePredictor(multiprocessing.Process):
         print 'New state: {0}'.format(self.states[index].name)
 
         # Retrain our model
-        if self.retrain:
+        if retrain:
             print 'Retraining'
             y = keras.utils.to_categorical(index, self.num_classes)
             self.model.train_on_batch(np.array([x]), y)
