@@ -2,7 +2,7 @@
 
 # Controller
 from core.controllers import *
-from core.voice import VoiceClassifier
+from core.voice import VoiceRecognizer, VoiceCommandClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -31,7 +31,7 @@ class MainController(threading.Thread):
 
         x = 0
         for i in range(len(self.controllers)):
-            for j in range(len(self.controllers[i])):
+            for j in range(len(self.controllers[i].states)):
                 self.hashed_states[i, j] = x
                 x += 1
 
@@ -88,7 +88,16 @@ class MainController(threading.Thread):
     def resume(self):
         self.running = True
 
+class MainControllerUnittest(unittest.TestCase):
+
+    def setUp(self):
+        self.main_controller = MainController([DummyController(update_interval=1)])
+
+    def test_dummy(self):
+        self.main_controller.start()
+        time.sleep(10)
+        self.main_controller.shutDown()
+
 
 if __name__ == '__main__':
-    main_controller = MainController([DummyController(update_interval=10)])
-    main_controller.start()
+    unittest.main()

@@ -100,6 +100,7 @@ class MinifigDetector(multiprocessing.Process):
         else:
             pass
             # TODO add new habitats (how? if NN has fixed output?)
+
         return index, self.class_labels[index]
 
     def update(self, verbose=True):
@@ -107,7 +108,7 @@ class MinifigDetector(multiprocessing.Process):
         img = self.camera.getData(grayscale=False)
         lego_faces = self.lego_face_classifier.detectMultiScale(img)
         if verbose:
-            print 'Found {0} potential matches'
+            print 'Found {0} potential matches'.format(len(lego_faces))
 
         for (x, y, w, h) in lego_faces:
             cropped = self.transform(img[y: y + h, x: x + w])
@@ -135,8 +136,8 @@ class MinifigDetectorUnittest(unittest.TestCase):
 
     def setUp(self):
         cascade = '/usr/local/lib/node_modules/opencv/data/haarcascade_frontalface_alt2.xml'
-        john_doe = Minifig('john_doe')
-        sigmund_freud = Minifig('sigmund_freud')
+        john_doe = Minifig('John Doe')
+        sigmund_freud = Minifig('Sigmund Freud')
         self.md = MinifigDetector(
             [john_doe, sigmund_freud], update_interval=2, cascade_classifier=cascade)
 
