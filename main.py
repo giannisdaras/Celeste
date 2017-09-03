@@ -2,7 +2,8 @@
 
 # Controller
 from core.controllers import *
-from core.voice import VoiceClassifier
+from core.voice import VoiceCommandClassifier
+from core.voice import VoiceRecognizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -12,6 +13,7 @@ import threading
 import psycopg2
 import sys
 import pyttsx
+import pyaudio
 
 
 class MainController(threading.Thread):
@@ -33,16 +35,19 @@ class MainController(threading.Thread):
         self.talk = pyttsx.init()
         try:
     		self.conn = psycopg2.connect("dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
-		except:
-			sys.exit(0)
+    	except:
+    		sys.exit(0)
+    	self.cur = self.conn.cursor()
+    	self.cur.execute('select * from settings')
+    	self.first_time=self.cur.fetchall()[0]
+    	if (self.first_time):
+    		self.configure()
         self.hashed_states = {}  # TODO hash pairs
-
         x = 0
         for i in range(len(self.controllers)):
-            for j in range(len(self.controllers[i])):
+            for j in range(len(self.controllers[i].states)):
                 self.hashed_states[i, j] = x
                 x += 1
-
     def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
 
@@ -64,12 +69,6 @@ class MainController(threading.Thread):
         self.joinAll()
 
     def run(self):
-    	self.cur = conn.cursor()
-    	self.cur.execute('select from settings where id==1')
-    	first_time=self.cur.fetch_all()[2]
-    	if (first_time=='true'):
-    		self.configure()
-
         # start all controllers as threads
         for controller in self.controllers:
             controller.start()
@@ -105,8 +104,8 @@ class MainController(threading.Thread):
     def configure(self):
     	self.talk.say('Welcome owner! I would like to know a few things about you!')
     	self.talk.runAndWait()
-    	self.talk.say('What is your favourite color?')
-    	self.talk.runAndWait()
+    	# self.talk.say('What is your favourite color?')
+    	# self.talk.runAndWait()
     	#at response color
     	pass
 
