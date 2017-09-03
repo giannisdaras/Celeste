@@ -17,9 +17,6 @@ def get_board(num_tries=10):
             continue
     raise BoardNotFoundException()
 
-# Sensing
-
-
 class Sensor(object):
 
     def __init__(self, name, output_ports):
@@ -122,10 +119,6 @@ class ArduinoAnalogSensor(Sensor):
             return True
         except:
             return False
-# Enums for Arduino
-
-# TODO Add desired sensors
-
 
 class LEDArray(ArduinoDigitalSensor):
 
@@ -143,7 +136,7 @@ class CommTestCases(unittest.TestCase):
 
     def testLEDArray(self):
         ledarray = LEDArray('larray', self.board, input_pins=[13])
-        ledarray.writeLeds([1])
+        ledarray.writeData([1])
         print ledarray.getData()
 
     def testLightSensor(self):
