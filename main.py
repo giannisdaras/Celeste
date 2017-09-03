@@ -33,11 +33,14 @@ class MainController(threading.Thread):
                                                  use_idf=False)),
                                              ('clf', MultinomialNB()), ])
         self.talk = pyttsx.init()
+
+        # DB connection
         try:
             self.conn = psycopg2.connect(
-                "dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
+                "dbname='Celeste' user='postgres' host='localhost' password='1234'")
         except:
-            sys.exit(0)
+            raise Exception('Could not find database. Exiting now')
+            sys.exit(1)
         self.cur = self.conn.cursor()
         self.cur.execute('select * from settings')
         self.first_time = self.cur.fetchall()[0]
@@ -65,6 +68,7 @@ class MainController(threading.Thread):
         self.voice_recognizer.join()
 
     def shutDown(self):
+        print 'Terminating everything'
         for controller in self.controllers:
             controller.terminate()
         self.voice_recognizer.terminate()
@@ -126,4 +130,8 @@ class MainControllerUnittest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    main_controller = MainController(
+        [DummyController(update_interval=2)])
+    main_controller.start()
+    time.sleep(3)
+    main_controller.shutDown()
