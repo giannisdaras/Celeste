@@ -34,20 +34,22 @@ class MainController(threading.Thread):
                                              ('clf', MultinomialNB()), ])
         self.talk = pyttsx.init()
         try:
-    		self.conn = psycopg2.connect("dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
-    	except:
-    		sys.exit(0)
-    	self.cur = self.conn.cursor()
-    	self.cur.execute('select * from settings')
-    	self.first_time=self.cur.fetchall()[0]
-    	if (self.first_time):
-    		self.configure()
+            self.conn = psycopg2.connect(
+                "dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
+        except:
+            sys.exit(0)
+        self.cur = self.conn.cursor()
+        self.cur.execute('select * from settings')
+        self.first_time = self.cur.fetchall()[0]
+        if (self.first_time):
+            self.configure()
         self.hashed_states = {}  # TODO hash pairs
         x = 0
         for i in range(len(self.controllers)):
             for j in range(len(self.controllers[i].states)):
                 self.hashed_states[i, j] = x
                 x += 1
+
     def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
 
@@ -102,12 +104,25 @@ class MainController(threading.Thread):
         self.running = True
 
     def configure(self):
-    	self.talk.say('Welcome owner! I would like to know a few things about you!')
-    	self.talk.runAndWait()
-    	# self.talk.say('What is your favourite color?')
-    	# self.talk.runAndWait()
-    	#at response color
-    	pass
+        self.talk.say(
+            'Welcome owner! I would like to know a few things about you!')
+        self.talk.runAndWait()
+        # self.talk.say('What is your favourite color?')
+        # self.talk.runAndWait()
+        # at response color
+        pass
+
+
+class MainControllerUnittest(unittest.TestCase):
+
+    def setUp(self):
+        self.main_controller = MainController(
+            [DummyController(update_interval=2)])
+
+    def test_dummy(self):
+        self.main_controller.start()
+        time.sleep(10)
+        self.main_controller.shutDown()
 
 
 if __name__ == '__main__':
