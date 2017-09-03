@@ -11,6 +11,7 @@ import time
 import threading
 import psycopg2
 import sys
+import pyttsx
 
 
 class MainController(threading.Thread):
@@ -29,6 +30,11 @@ class MainController(threading.Thread):
                                              ('tfidf', TfidfTransformer(
                                                  use_idf=False)),
                                              ('clf', MultinomialNB()), ])
+        self.talk = pyttsx.init()
+        try:
+    		self.conn = psycopg2.connect("dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
+		except:
+			sys.exit(0)
         self.hashed_states = {}  # TODO hash pairs
 
         x = 0
@@ -36,10 +42,6 @@ class MainController(threading.Thread):
             for j in range(len(self.controllers[i])):
                 self.hashed_states[i, j] = x
                 x += 1
-        try:
-    		self.conn = psycopg2.connect("dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
-		except:
-			sys.exit(0)
 
     def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
@@ -101,6 +103,11 @@ class MainController(threading.Thread):
         self.running = True
 
     def configure(self):
+    	self.talk.say('Welcome owner! I would like to know a few things about you!')
+    	self.talk.runAndWait()
+    	self.talk.say('What is your favourite color?')
+    	self.talk.runAndWait()
+    	#at response color
     	pass
 
 
