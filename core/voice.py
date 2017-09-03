@@ -1,10 +1,10 @@
 from __init__ import *
-import inspect
 
 global homeName
 homeName = "home"
 
-class VoiceRecognizerModes:
+
+class VoiceRecognizerModes(enum.Enum):
     RECORD = 0
     COMMAND = 1
 
@@ -57,13 +57,16 @@ class VoiceRecognizer(multiprocessing.Process):
 
     @mode.setter
     def mode(self, mode):
-        assert(mode == VoiceRecognizerModes.RECORD or mode == VoiceRecognizerModes.COMMAND)
-        self.mode = mode
+        assert(mode == VoiceRecognizerModes.RECORD or mode ==
+               VoiceRecognizerModes.COMMAND)
+        self._mode = mode
 
 # TODO Add classification class with bayesian classifier
 
+
 class VoiceCommandClassifier(VoiceRecognizer):
     pass
+
 
 class VoiceRecognizerUnittest(unittest.TestCase):
 
@@ -73,6 +76,7 @@ class VoiceRecognizerUnittest(unittest.TestCase):
         time.sleep(20)
         voice_recognizer.terminate()
         voice_recognizer.join()
+
 
 if __name__ == '__main__':
     unittest.main()

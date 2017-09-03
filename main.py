@@ -148,6 +148,11 @@ class MainController(threading.Thread):
             "Everything is tailor-made tou your habbits and automated tasks will take place all of the time")
         self.talk("So relax and let the fun begin!")
 
+        #Do some configuration stuff
+
+        # alter mode to command mode
+        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+
     @property
     def instruction(self):
         return voice_recognizer.instruction.split(' ')
