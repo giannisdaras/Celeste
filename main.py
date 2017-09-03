@@ -2,12 +2,8 @@
 
 # Controller
 from core.controllers import *
-<<<<<<< HEAD
-from core.voice import VoiceRecognizer, VoiceCommandClassifier
-=======
 from core.voice import VoiceCommandClassifier
 from core.voice import VoiceRecognizer
->>>>>>> a9037f4e056832088ec269f91290c9bce10da016
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -105,17 +101,6 @@ class MainController(threading.Thread):
     def resume(self):
         self.running = True
 
-<<<<<<< HEAD
-class MainControllerUnittest(unittest.TestCase):
-
-    def setUp(self):
-        self.main_controller = MainController([DummyController(update_interval=1)])
-
-    def test_dummy(self):
-        self.main_controller.start()
-        time.sleep(10)
-        self.main_controller.shutDown()
-=======
     def configure(self):
     	self.talk.say('Welcome owner! I would like to know a few things about you!')
     	self.talk.runAndWait()
@@ -123,7 +108,6 @@ class MainControllerUnittest(unittest.TestCase):
     	# self.talk.runAndWait()
     	#at response color
     	pass
->>>>>>> a9037f4e056832088ec269f91290c9bce10da016
 
 
 if __name__ == '__main__':
