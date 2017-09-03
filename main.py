@@ -2,13 +2,22 @@
 
 # Controller
 from core.controllers import *
+<<<<<<< HEAD
 from core.voice import VoiceRecognizer, VoiceCommandClassifier
+=======
+from core.voice import VoiceCommandClassifier
+from core.voice import VoiceRecognizer
+>>>>>>> a9037f4e056832088ec269f91290c9bce10da016
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 import time
 import threading
+import psycopg2
+import sys
+import pyttsx
+import pyaudio
 
 
 class MainController(threading.Thread):
@@ -27,14 +36,22 @@ class MainController(threading.Thread):
                                              ('tfidf', TfidfTransformer(
                                                  use_idf=False)),
                                              ('clf', MultinomialNB()), ])
+        self.talk = pyttsx.init()
+        try:
+    		self.conn = psycopg2.connect("dbname='Celeste' user='postgres' host='127.0.0.1' password='1234'")
+    	except:
+    		sys.exit(0)
+    	self.cur = self.conn.cursor()
+    	self.cur.execute('select * from settings')
+    	self.first_time=self.cur.fetchall()[0]
+    	if (self.first_time):
+    		self.configure()
         self.hashed_states = {}  # TODO hash pairs
-
         x = 0
         for i in range(len(self.controllers)):
             for j in range(len(self.controllers[i].states)):
                 self.hashed_states[i, j] = x
                 x += 1
-
     def train_classifier(self, x, y):
         self.bayesian_classifier.fit(x, y)
 
@@ -88,6 +105,7 @@ class MainController(threading.Thread):
     def resume(self):
         self.running = True
 
+<<<<<<< HEAD
 class MainControllerUnittest(unittest.TestCase):
 
     def setUp(self):
@@ -97,6 +115,15 @@ class MainControllerUnittest(unittest.TestCase):
         self.main_controller.start()
         time.sleep(10)
         self.main_controller.shutDown()
+=======
+    def configure(self):
+    	self.talk.say('Welcome owner! I would like to know a few things about you!')
+    	self.talk.runAndWait()
+    	# self.talk.say('What is your favourite color?')
+    	# self.talk.runAndWait()
+    	#at response color
+    	pass
+>>>>>>> a9037f4e056832088ec269f91290c9bce10da016
 
 
 if __name__ == '__main__':
