@@ -20,14 +20,13 @@ frame = None
 cmd = os.system
 # mouse callback
 
+
 def clean_dir():
     cmd('rm -rf positive* negative*')
     cmd('rm -rf classifier')
 
-def train_haar_cascade():
-    pass
 
-def obj_marker(event,x,y,flags,param):
+def obj_marker(event, x, y, flags, param):
     global click_count
     global debug
     global obj_list
@@ -50,11 +49,13 @@ def obj_marker(event,x,y,flags,param):
                 x1 = x
             if y1 > y:
                 y1 = y
-            obj_list.append((x1,y1,w,h))
+            obj_list.append((x1, y1, w, h))
             if debug > 0:
                 print obj_list
-            cv2.rectangle(frame,(x1 - 2 ,y1 - 2),(x1+w + 2,y1+h + 2),(255,255,255),2)
-            cv2.imshow('frame',frame)
+            cv2.rectangle(frame, (x1 - 2, y1 - 2),
+                          (x1 + w + 2, y1 + h + 2), (255, 255, 255), 2)
+            cv2.imshow('frame', frame)
+
 
 print 'Clean everything [y/n]?'
 ans = raw_input().strip('\n')
@@ -85,7 +86,7 @@ neg_file = open('negatives.txt', 'w')
 for i in range(num_neg):
     ret, img = cam.read()
     cv2.imwrite('{0}/{1}.jpg'.format(neg_dir, i + 1), img)
-    print 'Sample {0} captured!'.format(i+1)
+    print 'Sample {0} captured!'.format(i + 1)
     neg_file.write('{0}/{1}.jpg\n'.format(neg_dir, i + 1))
     time.sleep(update_interval)
 neg_file.close()
@@ -118,51 +119,59 @@ for j in range(num_classes):
     for i in range(num_pos):
         ret, img = cam.read()
         cv2.imwrite('{0}/{1}.jpg'.format(pos_dir, i + 1), img)
-        print 'Sample {0} captured!'.format(i+1)
+        print 'Sample {0} captured!'.format(i + 1)
         time.sleep(update_interval)
 
 print "Now let's mark positives"
 
 ordinals = [ord(str(i)) for i in range(num_classes)]
 
-#getting list of jpgs files from
+# getting list of jpgs files from
 list = glob.glob('%s/*.jpg' % pos_dir)
 if debug > 0:
     print list
-#creating window for frame and setting mouse callback
-cv2.namedWindow('frame',cv2.WINDOW_AUTOSIZE)
-cv2.setMouseCallback('frame',obj_marker)
-#creating a file handle
-file_name = open('positives.txt',"w")
+# creating window for frame and setting mouse callback
+cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
+cv2.setMouseCallback('frame', obj_marker)
+# creating a file handle
+file_name = open('positives.txt', "w")
 neural_data_file = open('{0}/neural_data.txt'.format(pos_dir), "w")
-#loop to traverse through all the files in given path
+# loop to traverse through all the files in given path
 for i in list:
     frame = cv2.imread(i)
     print i                                                  # reading file
-    cv2.imshow('frame',frame)                                               # showing it in frame
-    obj_count = 0                                                           #initializing obj_count
-    key = cv2.waitKey(0)                                                    # waiting for user key
-    #print key & 0xFF
-    while((key & 0xFF != ord('q')) and (key & 0xFF != ord('n')) and (not(key & 0xFF % ord('0') <= num_classes - 1))):           # wait till key pressed is q or n
+    # showing it in frame
+    cv2.imshow('frame', frame)
+    obj_count = 0  # initializing obj_count
+    # waiting for user key
+    key = cv2.waitKey(0)
+    # print key & 0xFF
+    # wait till key pressed is q or n
+    while((key & 0xFF != ord('q')) and (key & 0xFF != ord('n')) and (not(key & 0xFF % ord('0') <= num_classes - 1))):
         key = cv2.waitKey(0)
-        #print key & 0xFF
+        # print key & 0xFF
 
-        if(key & 0xFF == ord('c')):                                         # if key press is c, cancel previous markings
-            obj_count = 0                                                   # initializing obj_count and list
+        # if key press is c, cancel previous markings
+        if(key & 0xFF == ord('c')):
+            # initializing obj_count and list
+            obj_count = 0
             obj_list = []
-            frame = cv2.imread(i)                                           # read original file
-            cv2.imshow("frame" ,frame)                                       # refresh the frame
+            # read original file
+            frame = cv2.imread(i)
+            # refresh the frame
+            cv2.imshow("frame", frame)
     if(key & 0xFF == ord('q')):                                             # if q is pressed
         break                                                               # exit
     elif key & 0xFF % ord('0') <= num_classes - 1:
         if obj_count > 0:
             x, y, w, h = obj_list[0]
-            print 'Cropping to window size {0}x{1}'.format(w,h)
-            frame = frame[y : y + h , x : x + w ]
+            print 'Cropping to window size {0}x{1}'.format(w, h)
+            frame = frame[y: y + h, x: x + w]
             frame = cv2.resize(frame, (size_x, size_y))
-            cv2.imwrite('{0}'.format(i),frame)
+            cv2.imwrite('{0}'.format(i), frame)
             file_name.write('{0}\n'.format(i))
-            neural_data_file.write('{0} {1}\n'.format(i, (key & 0xFF) % ord('0')))
+            neural_data_file.write(
+                '{0} {1}\n'.format(i, (key & 0xFF) % ord('0')))
             obj_count = 0
             obj_list = []
     elif(key & 0xFF == ord('n')):                                           # if n is pressed
@@ -178,5 +187,42 @@ cam.release()
 
 print 'Start Haar-Classifier training? [y/n]:'
 ans = raw_input().strip('\n')
-if not ()'y' in ans):
+if not ('y' in ans):
     sys.exit(0)
+
+print 'User perl script to generate samples? [y/n]'
+ans = raw_input().strip('\n')
+
+cr_smp = 'opencv_createsamples -bgcolor 0 -bgthresh 0 -maxxangle 1.1 -maxyangle 1.1 -maxzangle 0.5 -maxidev 40 -w {} -h {}'.format(size_x, size_y)
+
+if 'y' in ans:
+    print 'Generating Samples: How many samples do you want? [default 7000]'
+    num_samples=int(raw_input())
+
+    cmd('perl bin/createsamples.pl  positives.txt negatives.txt samples {} "{}"'.format(
+    num_samples, cr_smp))
+else:
+    cmd(cr_smp)
+
+print 'Merging samples with mergevec'
+
+import mergevec
+
+mergevec.merge_vec_files('samples/', 'samples.vec')
+
+print 'Enter number of stages'
+numStages=int(raw_input())
+
+try:
+    os.mkdir('classifier')
+except:
+    pass
+
+print 'Starting training'
+cmd('''opencv_traincascade -data classifier -vec samples.vec -bg negatives.txt\
+   -numStages {} -minHitRate 0.999 -maxFalseAlarmRate 0.5 -numPos 1000\
+   -numNeg 600 -w {} -h {} -mode ALL -precalcValBufSize 1024\
+   -precalcIdxBufSize 1024 -featureType LBP'''.format(numStages, size_x, size_y))
+
+print 'training completed!'
+sys.exit(0)
