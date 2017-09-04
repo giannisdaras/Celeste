@@ -53,7 +53,7 @@ def obj_marker(event,x,y,flags,param):
             obj_list.append((x1,y1,w,h))
             if debug > 0:
                 print obj_list
-            cv2.rectangle(frame,(x1,y1),(x1+w,y1+h),(255,255,255),2)
+            cv2.rectangle(frame,(x1 - 2 ,y1 - 2),(x1+w + 2,y1+h + 2),(255,255,255),2)
             cv2.imshow('frame',frame)
 
 print 'Clean everything [y/n]?'
@@ -158,7 +158,7 @@ for i in list:
         if obj_count > 0:
             x, y, w, h = obj_list[0]
             print 'Cropping to window size {0}x{1}'.format(w,h)
-            frame = frame[y + 2 : y + h - 2, x + 2: x + w - 2]
+            frame = frame[y : y + h , x : x + w ]
             frame = cv2.resize(frame, (size_x, size_y))
             cv2.imwrite('{0}'.format(i),frame)
             file_name.write('{0}\n'.format(i))
@@ -172,5 +172,11 @@ for i in list:
 file_name.close()
 neural_data_file.close()
 cv2.destroyAllWindows()
+cam.release()
 
 # TODO Haar training
+
+print 'Start Haar-Classifier training? [y/n]:'
+ans = raw_input().strip('\n')
+if not ()'y' in ans):
+    sys.exit(0)
