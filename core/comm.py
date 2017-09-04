@@ -129,21 +129,5 @@ class LEDArray(ArduinoDigitalSensor):
         for pin in input_pins:
             self.board.set_pin_mode(pin, board.OUTPUT, board.DIGITAL)
 
-class CommTestCases(unittest.TestCase):
-
-    def setUp(self):
-        self.board = get_board()
-
-    def testLEDArray(self):
-        ledarray = LEDArray('larray', self.board, input_pins=[13])
-        ledarray.writeData([1])
-        print ledarray.getData()
-
-    def testLightSensor(self):
-        ls = ArduinoAnalogSensor('light', self.board, input_pins=[0])
-        for i in range(10):
-            print ls.getData()
-
-
 if __name__ == '__main__':
     unittest.main()

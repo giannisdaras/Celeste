@@ -162,18 +162,6 @@ class MainController(threading.Thread):
         return voice_recognizer.instruction.split(' ')
 
 
-class MainControllerUnittest(unittest.TestCase):
-
-    def setUp(self):
-        self.main_controller = MainController(
-            [DummyController(update_interval=2)])
-
-    def test_dummy(self):
-        self.main_controller.start()
-        time.sleep(10)
-        self.main_controller.shutDown()
-
-
 if __name__ == '__main__':
     main_controller = MainController(
         [DummyController(update_interval=2)])
