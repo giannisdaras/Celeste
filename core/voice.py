@@ -68,15 +68,5 @@ class VoiceCommandClassifier(VoiceRecognizer):
     pass
 
 
-class VoiceRecognizerUnittest(unittest.TestCase):
-
-    def test_voice_recognizer(self):
-        voice_recognizer = VoiceRecognizer()
-        voice_recognizer.start()
-        time.sleep(20)
-        voice_recognizer.terminate()
-        voice_recognizer.join()
-
-
 if __name__ == '__main__':
     unittest.main()
