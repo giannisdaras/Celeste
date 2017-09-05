@@ -5,8 +5,9 @@ homeName = "home"
 
 
 class VoiceRecognizerModes(enum.Enum):
-    RECORD = 0
-    COMMAND = 1
+    IDLE = 0
+    RECORD = 1
+    COMMAND = 2
 
 
 class VoiceRecognizer(multiprocessing.Process):
@@ -33,6 +34,7 @@ class VoiceRecognizer(multiprocessing.Process):
                         self.prefix) + len(self.prefix) + 1:]
                     self.instruction = text
                 elif self.mode == VoiceRecognizerModes.RECORD:
+                    self.triggered = True
                     self.instruction = message
             except sr.UnknownValueError:
                 print('Untracked')
@@ -64,9 +66,7 @@ class VoiceRecognizer(multiprocessing.Process):
 # TODO Add classification class with bayesian classifier
 
 
+
+
 class VoiceCommandClassifier(VoiceRecognizer):
     pass
-
-
-if __name__ == '__main__':
-    unittest.main()

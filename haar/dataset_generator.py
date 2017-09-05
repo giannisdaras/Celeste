@@ -94,6 +94,7 @@ cmd('find ./negative_images -iname "*.jpg" > negatives.txt')
 
 print 'Negatives : OK'
 
+time.sleep(4)
 
 print 'Enter number of positive samples to be acquired for each person: '
 num_pos = int(raw_input().strip('\n'))
@@ -235,9 +236,9 @@ except:
 
 print 'Starting training'
 cmd('''opencv_traincascade -data classifier -vec samples.vec -bg negatives.txt\
-   -numStages {} -minHitRate 0.999 -maxFalseAlarmRate 0.5 -numPos 1000\
-   -numNeg 600 -w {} -h {} -mode ALL -precalcValBufSize 1024\
-   -precalcIdxBufSize 1024 -featureType LBP'''.format(numStages, size_x, size_y))
+   -numStages {} -minHitRate 0.999 -maxFalseAlarmRate 0.5 -numPos {}\
+   -numNeg {} -w {} -h {} -mode ALL -precalcValBufSize 1024\
+   -precalcIdxBufSize 1024 -featureType LBP'''.format(numStages, num_samples, 2 * num_samples, size_x, size_y))
 
 print 'training completed!'
 sys.exit(0)

@@ -128,6 +128,3 @@ class LEDArray(ArduinoDigitalSensor):
 
         for pin in input_pins:
             self.board.set_pin_mode(pin, board.OUTPUT, board.DIGITAL)
-
-if __name__ == '__main__':
-    unittest.main()
