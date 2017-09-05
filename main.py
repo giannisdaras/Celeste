@@ -153,7 +153,7 @@ class MainController(threading.Thread):
     	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
         self.talk("Hello, user! What is your favourite color?")
         self.voice_recognizer.start()
-        time.sleep(10)
+        time.sleep(4)
         print('Instruction')
         print(self.instruction)
         # self.talk("But first let me introduce myself. My name is {0}; your new smart home assistant".format(
