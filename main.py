@@ -4,10 +4,6 @@
 from core.controllers import *
 from core.voice import VoiceCommandClassifier
 from core.voice import VoiceRecognizer, VoiceRecognizerModes
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.pipeline import Pipeline
 import time
 import threading
 import psycopg2
@@ -25,7 +21,7 @@ class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
     rest of the controllers. Due to GIL it is obliged to be a threading.Thread"""
 
-    def __init__(self, controllers, voice_recognizer=VoiceRecognizer(), direct_command=False):
+    def __init__(self, controllers, voice_recognizer=VoiceCommandClassifier(), direct_command=False):
         super(MainController, self).__init__()
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
@@ -37,10 +33,6 @@ class MainController(threading.Thread):
 
         self.direct_command = direct_command
 
-        self.bayesian_classifier = Pipeline([('vect', CountVectorizer()),
-                                             ('tfidf', TfidfTransformer(
-                                                 use_idf=False)),
-                                             ('clf', MultinomialNB()), ])
 
         # DB connection
         try:
@@ -62,8 +54,6 @@ class MainController(threading.Thread):
                 self.hashed_states[i, j] = x
                 x += 1
 
-    def train_classifier(self, x, y):
-        self.bayesian_classifier.fit(x, y)
 
     def changeState(self, i, k, wait_interval=0.5):
         self.controllers[i].state = self.controllers[i].states[k]
@@ -121,7 +111,7 @@ class MainController(threading.Thread):
                                 if controller.states[k].name == voice_recognizer.instruction:
                                     self.changeState(i, k)
                     else:
-                        y = self.bayesian_classifier.predict(
+                        y = self.voice_recognizer.bayesian_classifier.predict(
                             voice_recognizer.instruction)
                         try:
                             self.changeState(*self.hashed_states[y])
@@ -155,26 +145,33 @@ class MainController(threading.Thread):
     def instruction(self):
         return self.voice_recognizer_queue.get().split(' ')
 
+
+    def ask_question(self, question, response_time=10):
+        self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
+        self.talk(question)
+        time.sleep(response_time)
+        self.voice_recognizer.pause()
+        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+        return self.instruction
+
+
     def configure(self):
-    	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
-        self.talk("Hello, user! What is your favourite color?")
-        self.voice_recognizer.start()
-        time.sleep(10)
-        print('Instruction')
-        print(self.instruction)
-        # self.talk("But first let me introduce myself. My name is {0}; your new smart home assistant".format(
+    	# self.talk("But first let me introduce myself. My name is {0}; your new smart home assistant".format(
         #     ASSISTANT_NAME))
         # self.talk(
         #     "You will soon realize that you need to care almost for nothing cause this smart home behaves in an exciting way")
         # self.talk(
         #     "Everything is tailor-made tou your habbits and automated tasks will take place all of the time")
         # self.talk("So relax and let the fun begin!")
+        self.voice_recognizer.start()
 
+        print self.ask_question('What is your favourite colour?')
         #Do some configuration stuff
 
         # alter mode to command mode
-        self.voice_recognizer.pause()
-        #self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+
+
 
 
 
