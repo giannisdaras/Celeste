@@ -11,7 +11,7 @@ class VoiceRecognizerModes(enum.Enum):
 
 
 class VoiceRecognizer(multiprocessing.Process):
-    def __init__(self, prefix=homeName):
+    def __init__(self, prefix=homeName, queue=None):
         super(VoiceRecognizer, self).__init__()
         self.running = True
         self.recognizer = sr.Recognizer()
@@ -20,6 +20,7 @@ class VoiceRecognizer(multiprocessing.Process):
         self.message = ''
         self.prefix = prefix
         self._mode = VoiceRecognizerModes.RECORD
+        self.queue = queue
 
     def rec(self, verbose=True):
         with sr.Microphone() as source:
@@ -27,7 +28,8 @@ class VoiceRecognizer(multiprocessing.Process):
             audio1 = self.recognizer.listen(source)
             try:
                 message = self.recognizer.recognize_google(audio1)
-                print 'message was: ' + message
+                if verbose:
+                    print 'message was: ' + message
                 if self.mode == VoiceRecognizerModes.COMMAND and self.prefix in message:
                     self.triggered = True
                     text = message[message.index(
@@ -36,6 +38,8 @@ class VoiceRecognizer(multiprocessing.Process):
                 elif self.mode == VoiceRecognizerModes.RECORD:
                     self.triggered = True
                     self.instruction = message
+                if self.queue is not None:
+                    self.queue.put(self.instruction)
             except sr.UnknownValueError:
                 print('Untracked')
             finally:

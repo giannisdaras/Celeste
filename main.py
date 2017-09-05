@@ -17,7 +17,9 @@ import pyaudio
 
 global ASSISTANT_NAME
 ASSISTANT_NAME = "Celeste"
-
+LEARNING_RATE = 0.2
+#global queue
+#queue = multiprocessing.Queue()
 
 class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
@@ -27,9 +29,9 @@ class MainController(threading.Thread):
         super(MainController, self).__init__()
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
+        self.voice_recognizer_queue = multiprocessing.Queue()
+        self.voice_recognizer.queue = self.voice_recognizer_queue
 
-        self.queue = multiprocessing.Queue()  # thread queue
-        self.pool = multiprocessing.Pool()
         self.running = True
         self.kill = False
 
@@ -68,8 +70,12 @@ class MainController(threading.Thread):
         self.controllers[i].state.onActivation(self.controllers[i].getData())
         time.sleep(wait_interval)
         y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
+
+        n = int( LEARNING_RATE * self.controllers[i].num_train )
         x = self.constrollers[i].getData()
-        self.constrollers[i].model.train_on_batch(np.array([x]), y)
+        for i in range(n):
+            self.constrollers[i].model.train_on_batch(np.array([x]), y)
+        self.controllers[i].num_train += n
         self.controllers[i].resume()
 
     def joinAll(self):
@@ -97,7 +103,10 @@ class MainController(threading.Thread):
             controller.start()
 
         # start voice recognition
-        self.voice_recognizer.start()
+        if (not self.first_time):
+        	self.voice_recognizer.start()
+        else:
+        	self.voice_recognizer.resume()
 
         # main thread body
         while True:
@@ -138,33 +147,40 @@ class MainController(threading.Thread):
         time.sleep(0.5)
         return
 
+    @property
+    def instruction(self):
+        self.voice_recognizer_queue.get().split(' ')
+
+    @instruction.getter
+    def instruction(self):
+        return self.voice_recognizer_queue.get().split(' ')
+
     def configure(self):
-        self.talk("Hello, user! I would like to know a few things about you!")
-        self.talk("But first let me introduce myself. My name is {0}; your new smart home assistant".format(
-            ASSISTANT_NAME))
-        self.talk(
-            "You will soon realize that you need to care almost for nothing cause this smart home behaves in an exciting way")
-        self.talk(
-            "Everything is tailor-made tou your habbits and automated tasks will take place all of the time")
-        self.talk("So relax and let the fun begin!")
+    	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
+        self.talk("Hello, user! What is your favourite color?")
+        self.voice_recognizer.start()
+        time.sleep(10)
+        print('Instruction')
+        print(self.instruction)
+        # self.talk("But first let me introduce myself. My name is {0}; your new smart home assistant".format(
+        #     ASSISTANT_NAME))
+        # self.talk(
+        #     "You will soon realize that you need to care almost for nothing cause this smart home behaves in an exciting way")
+        # self.talk(
+        #     "Everything is tailor-made tou your habbits and automated tasks will take place all of the time")
+        # self.talk("So relax and let the fun begin!")
 
         #Do some configuration stuff
 
         # alter mode to command mode
-        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+        self.voice_recognizer.pause()
+        #self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
 
-    @property
-    def instruction(self):
-        return voice_recognizer.instruction.split(' ')
-
-    @instruction.getter
-    def instruction(self):
-        return voice_recognizer.instruction.split(' ')
 
 
 if __name__ == '__main__':
     main_controller = MainController(
         [DummyController(update_interval=2)])
     main_controller.start()
-    time.sleep(3)
-    main_controller.shutDown()
+    # time.sleep(3)
+    # main_controller.shutDown()

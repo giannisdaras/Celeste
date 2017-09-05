@@ -73,7 +73,7 @@ class ArduinoDigitalSensor(Sensor):
         try:
             self.board.capability_query()
             x = np.array([])
-            response = self.board.get_analog_response_table()
+            response = self.board.get_digital_response_table()
             for p in self.input_pins:
                 x = np.append(x, response[p][0])
             return x
