@@ -15,3 +15,8 @@ import unittest
 import speech_recognition as sr
 import threading
 from PyMata.pymata import PyMata
+from ctypes import c_char_p
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.pipeline import Pipeline

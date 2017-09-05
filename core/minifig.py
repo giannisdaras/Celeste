@@ -5,10 +5,12 @@ global THRESHOLD
 THRESHOLD = 0.75
 
 # Holds minifig information
+
+
 class Minifig:
     def __init__(self, name):
         self.name = name
-        self.preferences = {} #holds preferences like music etc
+        self.preferences = {}  # holds preferences like music etc
 
     def __getitem__(self, item):
         return self.preferences[item]
@@ -35,7 +37,7 @@ class MinifigDetector(multiprocessing.Process):
 
         self.num_classes = len(minifigs)
         self.minifigs = minifigs
-        self.class_labels = map(lambda x : x.name, self.minifigs)
+        self.class_labels = map(lambda x: x.name, self.minifigs)
         self.model.add(Convolution2D(16, kernel_size=(
             3, 3), padding='same', activation='relu', input_shape=(size[0], size[1], 3)))
         self.model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -62,15 +64,14 @@ class MinifigDetector(multiprocessing.Process):
         for lbl in self.class_labels:
             self.status[lbl] = 0
 
-    def train_cnn(self, img_dir, y, onehot=False, delimiter=' ', epochs=30, batch_size=128):
-        if isinstance(y, str):
-            y = np.genfromtxt(y, delimiter=delimiter)
+    def train_cnn(self, source_file, onehot=False, delimiter=' ', epochs=30, batch_size=128):
+        data = np.genfromtxt(source_file, delimiter=delimiter)
+        images = data[:, 0]
+        y = data[:, 1]
+
         if not onehot:
             y = keras.utils.to_categorical(y, self.num_classes)
-        current_dir = os.getcwd()
-        os.chdir(img_dir)
-        images = os.listdir('.')
-        x = np.array([])
+
         for image in images:
             tmp = cv2.imread(image)
             self.transform(tmp)
@@ -132,21 +133,14 @@ class MinifigDetector(multiprocessing.Process):
                 time.sleep(self.update_interval)
 
 
-class MinifigDetectorUnittest(unittest.TestCase):
-
-    def setUp(self):
-        cascade = '/usr/local/lib/node_modules/opencv/data/haarcascade_frontalface_alt2.xml'
-        john_doe = Minifig('John Doe')
-        sigmund_freud = Minifig('Sigmund Freud')
-        self.md = MinifigDetector(
-            [john_doe, sigmund_freud], update_interval=2, cascade_classifier=cascade)
-
-    def test_with_random_data(self):
-        self.md.start()
-        time.sleep(10)
-        self.md.terminate()
-        self.md.join()
-
-
-if __name__ == '__main__':
-    unittest.main()
+def initialize_from_directory(names, update_interval, source_dir='../haar'):
+    cwd = os.getcwd()
+    os.chdir(source_dir)
+    cascade = 'classifier/cascade.xml'
+    minfigs = [Minifig(x) for x in names]
+    minifig_detector = MinifigDetector(
+        minifigs, update_interval=update_interval, cascade_classifier=cascade)
+    minifig_detector.train_cnn('positive_images/neural_data.txt')
+    minifig.model.save_weights('weights.h5')
+    os.chdir(cwd)
+    return minifig_detector
