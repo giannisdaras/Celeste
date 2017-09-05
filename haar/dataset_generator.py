@@ -18,12 +18,11 @@ key = None
 frame = None
 
 cmd = os.system
-# mouse callback
-
 
 def clean_dir():
     cmd('rm -rf positive* negative*')
     cmd('rm -rf classifier')
+    cmd('rm -rf samples*')
 
 
 def obj_marker(event, x, y, flags, param):
@@ -82,14 +81,16 @@ except:
 
 print 'Acquiring Negatives'
 
-neg_file = open('negatives.txt', 'w')
+#neg_file = open('negatives.txt', 'w')
 for i in range(num_neg):
     ret, img = cam.read()
     cv2.imwrite('{0}/{1}.jpg'.format(neg_dir, i + 1), img)
     print 'Sample {0} captured!'.format(i + 1)
-    neg_file.write('{0}/{1}.jpg\n'.format(neg_dir, i + 1))
+    #neg_file.write('{0}/{1}.jpg\n'.format(neg_dir, i + 1))
     time.sleep(update_interval)
-neg_file.close()
+#neg_file.close()
+
+cmd('find ./negative_images -iname "*.jpg" > negatives.txt')
 
 print 'Negatives : OK'
 
@@ -113,14 +114,24 @@ size_x, size_y = map(int, raw_input().split(' '))
 
 print 'Acrquiring positives'
 
+x = 1
 for j in range(num_classes):
     print 'Enter person number {0} and press any key'.format(j)
     raw_input()
     for i in range(num_pos):
         ret, img = cam.read()
-        cv2.imwrite('{0}/{1}.jpg'.format(pos_dir, i + 1), img)
+        cv2.imwrite('{0}/{1}.jpg'.format(pos_dir, x), img)
         print 'Sample {0} captured!'.format(i + 1)
         time.sleep(update_interval)
+        x += 1
+
+try:
+    cam.release()
+    del cam
+except:
+    pass
+finally:
+    cam = cv2.VideoCapture(cam_id)
 
 print "Now let's mark positives"
 
@@ -134,7 +145,6 @@ if debug > 0:
 cv2.namedWindow('frame', cv2.WINDOW_AUTOSIZE)
 cv2.setMouseCallback('frame', obj_marker)
 # creating a file handle
-file_name = open('positives.txt', "w")
 neural_data_file = open('{0}/neural_data.txt'.format(pos_dir), "w")
 # loop to traverse through all the files in given path
 for i in list:
@@ -147,7 +157,7 @@ for i in list:
     key = cv2.waitKey(0)
     # print key & 0xFF
     # wait till key pressed is q or n
-    while((key & 0xFF != ord('q')) and (key & 0xFF != ord('n')) and (not(key & 0xFF % ord('0') <= num_classes - 1))):
+    while((key & 0xFF != ord('q')) and (key & 0xFF != ord('n')) and (not(key & 0xFF % ord('0') <= num_classes - 1)) and (key & 0xFF != ord('d'))):
         key = cv2.waitKey(0)
         # print key & 0xFF
 
@@ -169,7 +179,6 @@ for i in list:
             frame = frame[y: y + h, x: x + w]
             frame = cv2.resize(frame, (size_x, size_y))
             cv2.imwrite('{0}'.format(i), frame)
-            file_name.write('{0}\n'.format(i))
             neural_data_file.write(
                 '{0} {1}\n'.format(i, (key & 0xFF) % ord('0')))
             obj_count = 0
@@ -177,11 +186,16 @@ for i in list:
     elif(key & 0xFF == ord('n')):                                           # if n is pressed
         obj_count = 0
         obj_list = []
+    elif key & 0xFF == ord('d'):
+        obj_list = []
+        obj_count = 0
+        os.remove(i)
 
-file_name.close()
 neural_data_file.close()
 cv2.destroyAllWindows()
 cam.release()
+
+cmd('find ./positive_images -iname "*.jpg" > positives.txt')
 
 # TODO Haar training
 
@@ -193,14 +207,15 @@ if not ('y' in ans):
 print 'User perl script to generate samples? [y/n]'
 ans = raw_input().strip('\n')
 
-cr_smp = 'opencv_createsamples -bgcolor 0 -bgthresh 0 -maxxangle 1.1 -maxyangle 1.1 -maxzangle 0.5 -maxidev 40 -w {} -h {}'.format(size_x, size_y)
+cr_smp = 'opencv_createsamples -bgcolor 0 -bgthresh 0 -maxxangle 1.1 -maxyangle 1.1 -maxzangle 0.5 -maxidev 40 -w {} -h {}'.format(
+    size_x, size_y)
 
 if 'y' in ans:
     print 'Generating Samples: How many samples do you want? [default 7000]'
-    num_samples=int(raw_input())
+    num_samples = int(raw_input())
 
-    cmd('perl bin/createsamples.pl  positives.txt negatives.txt samples {} "{}"'.format(
-    num_samples, cr_smp))
+    cmd('perl createsamples.pl  positives.txt negatives.txt samples {} "{}"'.format(
+        num_samples, cr_smp))
 else:
     cmd(cr_smp)
 
@@ -211,7 +226,7 @@ import mergevec
 mergevec.merge_vec_files('samples/', 'samples.vec')
 
 print 'Enter number of stages'
-numStages=int(raw_input())
+numStages = int(raw_input())
 
 try:
     os.mkdir('classifier')
