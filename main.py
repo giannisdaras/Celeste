@@ -17,7 +17,9 @@ import pyaudio
 
 global ASSISTANT_NAME
 ASSISTANT_NAME = "Celeste"
-
+LEARNING_RATE = 0.2
+#global queue
+#queue = multiprocessing.Queue()
 
 class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
@@ -27,9 +29,9 @@ class MainController(threading.Thread):
         super(MainController, self).__init__()
         self.controllers = controllers
         self.voice_recognizer = voice_recognizer
+        self.voice_recognizer_queue = multiprocessing.Queue()
+        self.voice_recognizer.queue = self.voice_recognizer_queue
 
-        self.queue = multiprocessing.Queue()  # thread queue
-        self.pool = multiprocessing.Pool()
         self.running = True
         self.kill = False
 
@@ -68,8 +70,12 @@ class MainController(threading.Thread):
         self.controllers[i].state.onActivation(self.controllers[i].getData())
         time.sleep(wait_interval)
         y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
+
+        n = int( LEARNING_RATE * self.controllers[i].num_train )
         x = self.constrollers[i].getData()
-        self.constrollers[i].model.train_on_batch(np.array([x]), y)
+        for i in range(n):
+            self.constrollers[i].model.train_on_batch(np.array([x]), y)
+        self.controllers[i].num_train += n
         self.controllers[i].resume()
 
     def joinAll(self):
@@ -143,11 +149,11 @@ class MainController(threading.Thread):
 
     @property
     def instruction(self):
-        return self.voice_recognizer.instruction.split(' ')
+        self.voice_recognizer_queue.get().split(' ')
 
     @instruction.getter
     def instruction(self):
-        return self.voice_recognizer.instruction.split(' ')
+        return self.voice_recognizer_queue.get().split(' ')
 
     def configure(self):
     	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
@@ -168,7 +174,7 @@ class MainController(threading.Thread):
 
         # alter mode to command mode
         self.voice_recognizer.pause()
-        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
+        #self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
 
 
 
