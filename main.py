@@ -14,8 +14,7 @@ import pyaudio
 global ASSISTANT_NAME
 ASSISTANT_NAME = "Celeste"
 LEARNING_RATE = 0.2
-#global queue
-#queue = multiprocessing.Queue()
+
 
 class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
@@ -61,7 +60,7 @@ class MainController(threading.Thread):
         time.sleep(wait_interval)
         y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
 
-        n = int( LEARNING_RATE * self.controllers[i].num_train )
+        n = int(LEARNING_RATE * self.controllers[i].num_train)
         x = self.constrollers[i].getData()
         for i in range(n):
             self.constrollers[i].model.train_on_batch(np.array([x]), y)
@@ -94,9 +93,9 @@ class MainController(threading.Thread):
 
         # start voice recognition
         if (not self.first_time):
-        	self.voice_recognizer.start()
+            self.voice_recognizer.start()
         else:
-        	self.voice_recognizer.resume()
+            self.voice_recognizer.resume()
 
         # main thread body
         while True:
@@ -130,7 +129,7 @@ class MainController(threading.Thread):
     def talk(self, text):
         obj = pyttsx.init()
         obj.setProperty('rate', obj.getProperty('rate') - 45)
-        obj.setProperty('voice','english+f4')
+        obj.setProperty('voice', 'english+f4')
         obj.say(text)
         obj.runAndWait()
         del obj
@@ -165,13 +164,11 @@ class MainController(threading.Thread):
         # self.talk("So relax and let the fun begin!")
         self.voice_recognizer.start()
 
-        print self.ask_question('What is your favourite colour?')
-        #Do some configuration stuff
+        # Do some configuration stuff
 
         # alter mode to command mode
-        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
-
-
+        self.voice_recognizer.pause()
+        #self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
 
 
 
@@ -179,5 +176,5 @@ if __name__ == '__main__':
     main_controller = MainController(
         [DummyController(update_interval=2)])
     main_controller.start()
-    # time.sleep(3)
-    # main_controller.shutDown()
+    time.sleep(3)
+    main_controller.shutDown()
