@@ -91,7 +91,7 @@ class StatePredictor(multiprocessing.Process):
         self.model = Sequential()
         self.model.add(Dense(layout[0], input_dim=self.num_inputs))
         self.model.add(Activation('relu'))
-
+        self.num_train = 0
         for i in range(1, len(layout)):
             self.model.add(Dense(layout[i]))
             self.model.add(Activation('relu'))
@@ -125,7 +125,7 @@ class StatePredictor(multiprocessing.Process):
         # one-hot encoding
         if not onehot:
             y = keras.utils.to_categorical(y, self.num_classes)
-
+        self.num_train += len(x)
         self.model.fit(x, y, epochs=epochs, batch_size=batch_size)
 
     def saveWeights(self, filename='weights.h5'):
@@ -177,6 +177,7 @@ class StatePredictor(multiprocessing.Process):
             print 'Retraining'
             y = keras.utils.to_categorical(index, self.num_classes)
             self.model.train_on_batch(np.array([x]), y)
+            self.num_train += 1
 
         self.state.onActivation(x)
 

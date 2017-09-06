@@ -1,24 +1,26 @@
 from __init__ import *
 
+
 global homeName
 homeName = "home"
 
 
 class VoiceRecognizerModes(enum.Enum):
-    RECORD = 0
-    COMMAND = 1
+    IDLE = 0
+    RECORD = 1
+    COMMAND = 2
 
 
 class VoiceRecognizer(multiprocessing.Process):
-    def __init__(self, prefix=homeName):
+    def __init__(self, prefix=homeName, queue=None):
         super(VoiceRecognizer, self).__init__()
         self.running = True
         self.recognizer = sr.Recognizer()
         self.triggered = False  # Sets to true when it hears its name
-        self.instruction = ''  # holds last instruction as string
-        self.message = ''
+        self._intstruction = multiprocessing.Value(c_char_p, '')
         self.prefix = prefix
         self._mode = VoiceRecognizerModes.RECORD
+        self.queue = queue
 
     def rec(self, verbose=True):
         with sr.Microphone() as source:
@@ -26,14 +28,18 @@ class VoiceRecognizer(multiprocessing.Process):
             audio1 = self.recognizer.listen(source)
             try:
                 message = self.recognizer.recognize_google(audio1)
-                print 'message was: ' + message
+                if verbose:
+                    print 'message was: ' + message
                 if self.mode == VoiceRecognizerModes.COMMAND and self.prefix in message:
                     self.triggered = True
                     text = message[message.index(
                         self.prefix) + len(self.prefix) + 1:]
                     self.instruction = text
                 elif self.mode == VoiceRecognizerModes.RECORD:
+                    self.triggered = True
                     self.instruction = message
+                if self.queue is not None:
+                    self.queue.put(self.instruction)
             except sr.UnknownValueError:
                 print('Untracked')
             finally:
@@ -52,6 +58,18 @@ class VoiceRecognizer(multiprocessing.Process):
         self.running = True
 
     @property
+    def instruction(self):
+        return self._intstruction.value
+
+    @instruction.setter
+    def instruction(self, data):
+        self._intstruction.value = data
+
+    @instruction.getter
+    def instruction(self):
+        return self._intstruction.value
+
+    @property
     def mode(self):
         return self._mode
 
@@ -61,22 +79,22 @@ class VoiceRecognizer(multiprocessing.Process):
                VoiceRecognizerModes.COMMAND)
         self._mode = mode
 
-# TODO Add classification class with bayesian classifier
+    def clear_record_cache(self):
+        if self.queue is None:
+            return
+        while not self.queue.empty():
+            self.queue.get()
 
 
 class VoiceCommandClassifier(VoiceRecognizer):
-    pass
 
+    def __init__(self, prefix=homeName, queue=None):
+        super(VoiceCommandClassifier, self).__init__(
+            prefix=prefix, queue=queue)
+        self.bayesian_classifier = Pipeline([('vect', CountVectorizer()),
+                                             ('tfidf', TfidfTransformer(
+                                                 use_idf=False)),
+                                             ('clf', MultinomialNB()), ])
 
-class VoiceRecognizerUnittest(unittest.TestCase):
-
-    def test_voice_recognizer(self):
-        voice_recognizer = VoiceRecognizer()
-        voice_recognizer.start()
-        time.sleep(20)
-        voice_recognizer.terminate()
-        voice_recognizer.join()
-
-
-if __name__ == '__main__':
-    unittest.main()
+    def train_classifier(self, x, y):
+        self.bayesian_classifier.fit(x, y)
