@@ -1,5 +1,5 @@
 import cv2
-id_ = 1
+id_ = 0
 csc = cv2.CascadeClassifier('./classifier/cascade.xml')
 global cam
 
