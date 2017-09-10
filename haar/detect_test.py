@@ -1,9 +1,12 @@
-import cv2
-id_ = 0
+import cv2,sys
+if len(sys.argv) == 2:
+    id_ = int(sys.argv[1])
+else:
+    id_ = 0
 csc = cv2.CascadeClassifier('./classifier/cascade.xml')
 global cam
 
-cam = cv2.VideoCapture(id_)
+cam = cv2.VideoCapture()
 
 def detect(i):
 	global cam

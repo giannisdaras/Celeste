@@ -27,22 +27,24 @@ class Minifig:
 
 
 class MinifigDetector(multiprocessing.Process):
+	
+	def add_stage(self, i)
 
-	def __init__(self, minifigs, camera=Camera(), update_interval=10, size=(40, 40), cascade_classifier='classifier.xml'):
+	def __init__(self, minifigs, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml'):
 		super(MinifigDetector, self).__init__()
 		self.model = Sequential()
 		self.camera = camera
 		self.size = size
 		self.lego_face_classifier = cv2.CascadeClassifier(cascade_classifier)
-
+		self.grayscale = grayscale
 		self.num_classes = len(minifigs)
 		self.minifigs = minifigs
 		self.class_labels = map(lambda x: x.name, self.minifigs)
 		self.model.add(Convolution2D(16, kernel_size=(
-			3, 3), padding='same', activation='relu', input_shape=(size[0], size[1], 3)))
+			3, 3), padding='same', activation='relu', input_shape=(size[0], size[1], 1 if grayscale else 3)))
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		self.model.add(Dropout(0.5))
-
+	
 		self.model.add(Convolution2D(32, kernel_size=(
 			3, 3), padding='same', activation='relu'))
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
@@ -65,26 +67,43 @@ class MinifigDetector(multiprocessing.Process):
 			self.status[lbl] = 0
 
 	def train_cnn(self, source_file, onehot=False, delimiter=' ', epochs=30, batch_size=128):
-		data = np.genfromtxt(source_file, delimiter=delimiter, dtype="|U5")
-		images = data[:, 0]
-		y = data[:, 1].astype(int)
-		print y
+		current_dir = os.getcwd()
+		images = []
+		y = np.array([])
+		with open(source_file, 'r') as f:
+			while True:
+				l = f.readline()
+				if f is None:
+					break
+				l = l.strip('\n').split(delimiter)
+				if len(l) == 2:
+					images.append(l[0])
+					y = np.append(y, l[1])
+				else:
+					break
+		y = y.reshape((len(y), 1))
+		x = np.array([])
+		
 		if not onehot:
 			y = keras.utils.to_categorical(y, self.num_classes)
+		#print y
 
 		for image in images:
-			print 'Opening {0}'.format(image)
 			tmp = cv2.imread(image)
-			self.transform(tmp)
+			tmp = self.transform(tmp)
 			x = np.append(x, tmp)
+		x = x.reshape((len(y), self.size[1], self.size[0], 1 if self.grayscale else 3))
+
+		print x[0].shape
 		self.model.fit(x, y, epochs=epochs, batch_size=batch_size)
 		os.chdir(current_dir)
 
-	def transform(self, tmp, grayscale=False):
-		if grayscale:
+	def transform(self, tmp):
+		if self.grayscale:
 			tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
-		tmp = cv2.resize(tmp, self.size)
-		tmp = tmp.reshape((self.size[0], self.size[0], 1 if grayscale else 3))
+		if tmp.shape[0] != self.size[1] or tmp.shape[1] != self.size[0]:
+			tmp = cv2.resize(tmp, self.size)
+		tmp = tmp.reshape((self.size[0], self.size[1], 1 if self.grayscale else 3))
 		return tmp
 
 	def predict_face(self, x, verbose):
@@ -142,7 +161,7 @@ def initialize_from_directory(names, update_interval, source_dir='../haar'):
 	minifig_detector = MinifigDetector(
 		minifigs, update_interval=update_interval, cascade_classifier=cascade)
 	minifig_detector.train_cnn('neural_data.txt')
-	minifig.model.save_weights('weights.h5')
+	minifig_detector.model.save_weights('weights.h5')
 	os.chdir(cwd)
 	return minifig_detector
 

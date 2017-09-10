@@ -7,5 +7,5 @@ find ./positive_images -iname "*.jpg" > positives.txt &&
 perl createsamples.pl positives.txt negatives.txt samples 5000 "opencv_createsamples -bgcolor 0 -bgthresh 0 -maxxangle 1.1 -maxyangle 1.1 maxzangle 0.5 -maxidev 40 -w 40 -h 40" &&
 python mergevec.py -v samples -o samples.vec &&
 
-opencv_traincascade -data classifier -vec samples.vec -bg negatives.txt -numStages 15 -minHitRate 0.999 -maxFalseAlarmRate 0.3 -numPos 2500 -numNeg 1200 -w 40 -h 40 -mode ALL -precalcValBBufSize 2048 -featureType LBP 0
+opencv_traincascade -data classifier -vec samples.vec -bg negatives.txt -numStages 20 -minHitRate 0.999 -maxFalseAlarmRate 0.3 -numPos 2500 -numNeg 1200 -w 40 -h 40 -mode ALL -precalcValBBufSize 2048 -featureType LBP
 
