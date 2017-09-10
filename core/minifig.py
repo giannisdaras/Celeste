@@ -28,9 +28,13 @@ class Minifig:
 
 class MinifigDetector(multiprocessing.Process):
 	
-	def add_stage(self, i)
-
-	def __init__(self, minifigs, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml'):
+	def add_stage(self, i, f = lambda x : 2**(4 + x)):
+		self.model.add(Convolution2D(f(i), kernel_size=(
+			3, 3), padding='same', activation='relu'))
+		self.model.add(MaxPooling2D(pool_size=(2, 2)))
+		self.model.add(Dropout(0.5))
+	
+	def __init__(self, minifigs, num_stages=3, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml'):
 		super(MinifigDetector, self).__init__()
 		self.model = Sequential()
 		self.camera = camera
@@ -44,11 +48,9 @@ class MinifigDetector(multiprocessing.Process):
 			3, 3), padding='same', activation='relu', input_shape=(size[0], size[1], 1 if grayscale else 3)))
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		self.model.add(Dropout(0.5))
-	
-		self.model.add(Convolution2D(32, kernel_size=(
-			3, 3), padding='same', activation='relu'))
-		self.model.add(MaxPooling2D(pool_size=(2, 2)))
-		self.model.add(Dropout(0.5))
+		
+		for i in range(1, num_stages):
+			self.add_stage(i)	
 
 		self.model.add(Flatten())
 		self.model.add(Dense(self.num_classes, activation='softmax'))
