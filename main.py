@@ -128,8 +128,10 @@ class MainController(threading.Thread):
         self.running = True
 
     def talk(self, text):
+        self.voice_recognizer.pause()
         f=Popen("google_speech -l en '{0}'".format(text), shell=True)
         f.wait()
+        self.voice_recognizer.resume()
   		
 
 
@@ -155,9 +157,11 @@ class MainController(threading.Thread):
     	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
         self.talk("Welcome user. What is your name?")
         self.voice_recognizer.start()
-        time.sleep(4)
         self.talk("Hello {0}".format(str(self.instruction)))
-        self.voice_recognizer.pause()
+        self.talk("Favourite color?")
+        self.talk("You said: {0}".format(str(self.instruction)))
+        self.talk("team?")
+        self.talk("You said: {0}".format(str(self.instruction)))
         self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
 
 
