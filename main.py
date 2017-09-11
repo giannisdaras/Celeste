@@ -4,7 +4,7 @@
 from core.controllers import *
 from core.voice import VoiceCommandClassifier
 from core.voice import VoiceRecognizer, VoiceRecognizerModes
-from subprocess import call
+from subprocess import call,Popen
 import time
 import threading
 import psycopg2
@@ -128,7 +128,9 @@ class MainController(threading.Thread):
         self.running = True
 
     def talk(self, text):
-  		exit_code = call("google_speech -l en '{0}'".format(text), shell=True)
+        f=Popen("google_speech -l en '{0}'".format(text), shell=True)
+        f.wait()
+  		
 
 
     @property
