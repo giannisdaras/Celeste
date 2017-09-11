@@ -4,6 +4,7 @@
 from core.controllers import *
 from core.voice import VoiceCommandClassifier
 from core.voice import VoiceRecognizer, VoiceRecognizerModes
+from subprocess import call
 import time
 import threading
 import psycopg2
@@ -127,14 +128,8 @@ class MainController(threading.Thread):
         self.running = True
 
     def talk(self, text):
-        obj = pyttsx.init()
-        obj.setProperty('rate', obj.getProperty('rate') - 45)
-        obj.setProperty('voice', 'english+f4')
-        obj.say(text)
-        obj.runAndWait()
-        del obj
-        time.sleep(0.5)
-        return
+  		exit_code = call("google_speech -l en '{0}'".format(text), shell=True)
+
 
     @property
     def instruction(self):
@@ -156,11 +151,10 @@ class MainController(threading.Thread):
 
     def configure(self):
     	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
-        self.talk("Hello, user! What is your favourite color?")
+        self.talk("Welcome user. What is your name?")
         self.voice_recognizer.start()
         time.sleep(4)
-        print('Instruction')
-        print(self.instruction)
+        self.talk("Hello {0}".format(str(self.instruction)))
         self.voice_recognizer.pause()
         self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
 
