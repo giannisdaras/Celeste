@@ -4,13 +4,10 @@
 from core.controllers import *
 from core.voice import VoiceCommandClassifier
 from core.voice import VoiceRecognizer, VoiceRecognizerModes
-from subprocess import call,Popen
 import time
 import threading
 import psycopg2
 import sys
-import pyttsx
-import pyaudio
 
 global ASSISTANT_NAME
 ASSISTANT_NAME = "Celeste"
@@ -21,19 +18,9 @@ class MainController(threading.Thread):
     """ This class holds main controller that is responsible for synchronizing the
     rest of the controllers. Due to GIL it is obliged to be a threading.Thread"""
 
-    def __init__(self, controllers, voice_recognizer=VoiceCommandClassifier(), direct_command=False):
+    def __init__(self, controllers):
         super(MainController, self).__init__()
         self.controllers = controllers
-        self.voice_recognizer = voice_recognizer
-        self.voice_recognizer_queue = multiprocessing.Queue()
-        self.voice_recognizer.queue = self.voice_recognizer_queue
-
-        self.running = True
-        self.kill = False
-
-        self.direct_command = direct_command
-
-
         # DB connection
         try:
             self.conn = psycopg2.connect(
@@ -44,10 +31,9 @@ class MainController(threading.Thread):
         self.cur = self.conn.cursor()
         self.cur.execute('select * from settings')
         self.first_time = self.cur.fetchall()[0]
-        if (self.first_time):
-            self.configure()
-
         self.hashed_states = {}  # TODO hash pairs
+        self.running=True
+        self.kill=False
         x = 0
         for i in range(len(self.controllers)):
             for j in range(len(self.controllers[i].states)):
@@ -71,13 +57,11 @@ class MainController(threading.Thread):
     def joinAll(self):
         for controller in self.controllers:
             controller.join()
-        self.voice_recognizer.join()
 
     def shutDown(self):
         try:
             for controller in self.controllers:
                 controller.terminate()
-            self.voice_recognizer.terminate()
             self.joinAll()
             self.pause()
             self.kill = True
@@ -92,32 +76,10 @@ class MainController(threading.Thread):
         for controller in self.controllers:
             controller.start()
 
-        # start voice recognition
-        if (not self.first_time):
-            self.voice_recognizer.start()
-        else:
-            self.voice_recognizer.resume()
-
         # main thread body
         while True:
             while self.running:
-                if self.voice_recognizer.triggered and self.voice_recognizer.mode == VoiceRecognizerModes.COMMAND:
-                    print 'Stop State Prediction and to force voice command'
-                    # Find corresponding state
-
-                    if self.direct_command:
-                        for (i, controllers) in enumerate(self.controllers):
-                            for k in controller.states.keys():
-                                if controller.states[k].name == voice_recognizer.instruction:
-                                    self.changeState(i, k)
-                    else:
-                        y = self.voice_recognizer.bayesian_classifier.predict(
-                            voice_recognizer.instruction)
-                        try:
-                            self.changeState(*self.hashed_states[y])
-                        except KeyError:
-                            print 'Command not found'
-                            continue
+                pass
             if self.kill:
                 return
 
@@ -126,45 +88,6 @@ class MainController(threading.Thread):
 
     def resume(self):
         self.running = True
-
-    def talk(self, text):
-        self.voice_recognizer.pause()
-        f=Popen("google_speech -l en '{0}'".format(text), shell=True)
-        f.wait()
-        self.voice_recognizer.resume()
-  		
-
-
-    @property
-    def instruction(self):
-        self.voice_recognizer_queue.get().split(' ')
-
-    @instruction.getter
-    def instruction(self):
-        return self.voice_recognizer_queue.get().split(' ')
-
-
-    def ask_question(self, question, response_time=10):
-        self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
-        self.talk(question)
-        time.sleep(response_time)
-        self.voice_recognizer.pause()
-        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
-        return self.instruction
-
-
-    def configure(self):
-    	self.voice_recognizer.mode = VoiceRecognizerModes.RECORD
-        self.talk("Welcome user. What is your name?")
-        self.voice_recognizer.start()
-        self.talk("Hello {0}".format(str(self.instruction)))
-        self.talk("Favourite color?")
-        self.talk("You said: {0}".format(str(self.instruction)))
-        self.talk("team?")
-        self.talk("You said: {0}".format(str(self.instruction)))
-        self.voice_recognizer.mode = VoiceRecognizerModes.COMMAND
-
-
 
 if __name__ == '__main__':
     main_controller = MainController(
