@@ -46,6 +46,7 @@ class MainController(threading.Thread):
         self.q=multiprocessing.Queue()
         self.q.put(self.config)
         self.voice=VoiceRecognizer(self.q)
+        self.start()
 
 
     def changeState(self, i, k, wait_interval=0.5):
@@ -99,6 +100,5 @@ class MainController(threading.Thread):
 if __name__ == '__main__':
     main_controller = MainController(
         [DummyController(update_interval=2)])
-    main_controller.start()
-    time.sleep(3)
-    main_controller.shutDown()
+    # time.sleep(3)
+    # main_controller.shutDown()

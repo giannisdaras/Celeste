@@ -8,48 +8,69 @@ homeName = "home"
 class VoiceRecognizer(multiprocessing.Process):
     def __init__(self,q,prefix=homeName):
         super(VoiceRecognizer, self).__init__()
-        self.running = True
         self.recognizer = sr.Recognizer()
-        self.triggered = False  # Sets to true when it hears its name
-        self._intstruction = multiprocessing.Value(c_char_p, '')
-        self.prefix = prefix
         self.q=q
-        print(self.q.get())
+        self.config=self.q.get()
+        if (self.config==1):
+            self.running=False
+        else:
+            self.running=True
+        self.configure()
 
     def rec(self):
+        if (self.running==True):
+            with sr.Microphone() as source:
+                self.recognizer.adjust_for_ambient_noise(source)
+                audio1 = self.recognizer.listen(source)
+                try:
+                    message = self.recognizer.recognize_google(audio1)
+                except sr.UnknownValueError:
+                    message='Untracked'
+                finally:
+                    time.sleep(1)
+                    return(message)
+
+    def recordOnce(self):
         with sr.Microphone() as source:
             self.recognizer.adjust_for_ambient_noise(source)
             audio1 = self.recognizer.listen(source)
             try:
                 message = self.recognizer.recognize_google(audio1)
-                if verbose:
-                    print 'message was: ' + message
-                if self.mode == VoiceRecognizerModes.COMMAND and self.prefix in message:
-                    self.triggered = True
-                    text = message[message.index(
-                        self.prefix) + len(self.prefix) + 1:]
-                    self.instruction = text
-                elif self.mode == VoiceRecognizerModes.RECORD:
-                    self.triggered = True
-                    self.instruction = message
-                if self.queue is not None:
-                    self.queue.put(self.instruction)
+                return(message)
             except sr.UnknownValueError:
-                print('Untracked')
-            finally:
-                time.sleep(1)
-                self.triggered = False
+                self.talk('Please repeat')
+                return(self.recordOnce())
+
+
 
     def run(self):
         while True:
-            while self.running:
-                self.rec()
+            self.rec()
 
     def pause(self):
         self.running = False
 
     def resume(self):
         self.running = True
+
+    def talkAndWait(self,text):
+        f=Popen("google_speech -l en '{0}'".format(text), shell=True)
+        f.wait()
+        del f
+        return(self.recordOnce())
+    def talk(self,text):
+        f=Popen("google_speech -l en '{0}'".format(text), shell=True)
+        f.wait()
+        del f
+
+
+
+    def configure(self):
+        print(self.talkAndWait('Hello user, tell me your name'))
+        print(self.talkAndWait('Nice name. What is your favorite color?'))
+        self.start()
+
+
 
 
 class VoiceCommandClassifier(VoiceRecognizer):
