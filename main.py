@@ -3,34 +3,24 @@
 # Controller
 from core.controllers import *
 from core.voice import VoiceCommandClassifier
-from core.voice import VoiceRecognizer, VoiceRecognizerModes
+from core.voice import VoiceRecognizer
 import time
 import threading
 import psycopg2
 import sys
 
-global ASSISTANT_NAME
-ASSISTANT_NAME = "Celeste"
+#Constants
 LEARNING_RATE = 0.2
 
-
 class MainController(threading.Thread):
-    """ This class holds main controller that is responsible for synchronizing the
-    rest of the controllers. Due to GIL it is obliged to be a threading.Thread"""
+    ''' This class holds main controller that is responsible for synchronizing the
+    rest of the controllers. Due to GIL it is obliged to be a threading.Thread '''
 
     def __init__(self, controllers):
         super(MainController, self).__init__()
+
+        ''' Initializes controllers '''
         self.controllers = controllers
-        # DB connection
-        try:
-            self.conn = psycopg2.connect(
-                "dbname='Celeste' user='postgres' host='localhost' password='1234'")
-        except:
-            raise Exception('Could not find database. Exiting now')
-            sys.exit(1)
-        self.cur = self.conn.cursor()
-        self.cur.execute('select * from settings')
-        self.first_time = self.cur.fetchall()[0]
         self.hashed_states = {}  # TODO hash pairs
         self.running=True
         self.kill=False
@@ -39,6 +29,23 @@ class MainController(threading.Thread):
             for j in range(len(self.controllers[i].states)):
                 self.hashed_states[i, j] = x
                 x += 1
+        ''' Controllers initialization stops '''
+
+        ''' Establish connection with database'''
+        try:
+            self.conn = psycopg2.connect(
+                "dbname='Celeste' user='postgres' host='localhost' password='1234'")
+        except:
+            raise Exception('Could not find database. Exiting now')
+            sys.exit(1)
+        ''' ------------------------ '''
+
+        self.cur = self.conn.cursor()
+        self.cur.execute('select * from settings')
+        self.config = int(self.cur.fetchall()[0][2])
+        self.q=multiprocessing.Queue()
+        self.q.put(self.config)
+        self.voice=VoiceRecognizer(self.q)
 
 
     def changeState(self, i, k, wait_interval=0.5):

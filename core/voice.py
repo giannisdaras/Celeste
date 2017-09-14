@@ -5,24 +5,18 @@ global homeName
 homeName = "home"
 
 
-class VoiceRecognizerModes(enum.Enum):
-    IDLE = 0
-    RECORD = 1
-    COMMAND = 2
-
-
 class VoiceRecognizer(multiprocessing.Process):
-    def __init__(self, prefix=homeName, queue=None):
+    def __init__(self,q,prefix=homeName):
         super(VoiceRecognizer, self).__init__()
         self.running = True
         self.recognizer = sr.Recognizer()
         self.triggered = False  # Sets to true when it hears its name
         self._intstruction = multiprocessing.Value(c_char_p, '')
         self.prefix = prefix
-        self._mode = VoiceRecognizerModes.RECORD
-        self.queue = queue
+        self.q=q
+        print(self.q.get())
 
-    def rec(self, verbose=True):
+    def rec(self):
         with sr.Microphone() as source:
             self.recognizer.adjust_for_ambient_noise(source)
             audio1 = self.recognizer.listen(source)
@@ -56,34 +50,6 @@ class VoiceRecognizer(multiprocessing.Process):
 
     def resume(self):
         self.running = True
-
-    @property
-    def instruction(self):
-        return self._intstruction.value
-
-    @instruction.setter
-    def instruction(self, data):
-        self._intstruction.value = data
-
-    @instruction.getter
-    def instruction(self):
-        return self._intstruction.value
-
-    @property
-    def mode(self):
-        return self._mode
-
-    @mode.setter
-    def mode(self, mode):
-        assert(mode == VoiceRecognizerModes.RECORD or mode ==
-               VoiceRecognizerModes.COMMAND)
-        self._mode = mode
-
-    def clear_record_cache(self):
-        if self.queue is None:
-            return
-        while not self.queue.empty():
-            self.queue.get()
 
 
 class VoiceCommandClassifier(VoiceRecognizer):
