@@ -11,14 +11,6 @@ sgd = keras.optimizers.SGD(lr=0.1, decay=1e-2, momentum=0.9)
 
 # Holds minifig information
 
-def normalize(x, (l,r)=(None,None)):
-	x = x.astype('float64')
-	if l == None:
-		l = np.min(x)
-	if r == None:
-		r = np.max(x)		
-	return (x - l) / (r - l)	
-
 class Minifig:
 	def __init__(self, name):
 		self.name = name

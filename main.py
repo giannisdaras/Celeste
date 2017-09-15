@@ -2,7 +2,6 @@
 
 # Controller
 from core.controllers import *
-from core.voice import VoiceCommandClassifier
 from core.voice import VoiceRecognizer
 import time
 import threading
@@ -21,14 +20,9 @@ class MainController(threading.Thread):
 
         ''' Initializes controllers '''
         self.controllers = controllers
-        self.hashed_states = {}  # TODO hash pairs
-        self.running=True
+        self.running = True
         self.kill=False
-        x = 0
-        for i in range(len(self.controllers)):
-            for j in range(len(self.controllers[i].states)):
-                self.hashed_states[i, j] = x
-                x += 1
+
         ''' Controllers initialization stops '''
 
         ''' Establish connection with database'''
@@ -43,7 +37,7 @@ class MainController(threading.Thread):
         self.cur = self.conn.cursor()
         self.cur.execute('select * from settings')
         self.config = int(self.cur.fetchall()[0][2])
-        self.q=multiprocessing.Queue()
+        self.q = multiprocessing.Queue()
         self.q.put(self.config)
         self.voice=VoiceRecognizer(self.q)
         self.start()

@@ -5,6 +5,7 @@ import time
 import datetime
 import os
 import sys
+import operator
 import threading
 import inspect
 import enum
@@ -21,3 +22,12 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 from subprocess import call,Popen
+
+
+def normalize(x, (l,r)=(None,None)):
+	x = x.astype('float64')
+	if l == None:
+		l = np.min(x)
+	if r == None:
+		r = np.max(x)		
+	return (x - l) / (r - l)	

@@ -1,8 +1,6 @@
 from state_predictor import *
 from comm import *
 
-
-
 # This class holds controllers for various features
 
 # TODO Finish controller setup

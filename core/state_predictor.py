@@ -126,6 +126,7 @@ class StatePredictor(multiprocessing.Process):
         if not onehot:
             y = keras.utils.to_categorical(y, self.num_classes)
         self.num_train += len(x)
+        x = normalize(x)
         self.model.fit(x, y, epochs=epochs, batch_size=batch_size)
 
     def saveWeights(self, filename='weights.h5'):
@@ -139,6 +140,7 @@ class StatePredictor(multiprocessing.Process):
 
     def predict_next(self, x, verbose=True):
         """ Predct next state index = argmax (y_prob) """
+        x = normalize(x)
         y_prob = self.model.predict(np.array([x]))
         index = np.argmax(y_prob)
         if verbose:
