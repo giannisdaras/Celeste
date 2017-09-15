@@ -20,6 +20,7 @@ class VoiceRecognizer(multiprocessing.Process):
     def rec(self):
         if (self.running==True):
             with sr.Microphone() as source:
+                print('Here')
                 self.recognizer.adjust_for_ambient_noise(source)
                 audio1 = self.recognizer.listen(source)
                 try:
@@ -32,18 +33,19 @@ class VoiceRecognizer(multiprocessing.Process):
                     message='Untracked'
                 finally:
                     time.sleep(1)
-                    return(message)
 
     def recordOnce(self):
         with sr.Microphone() as source:
             self.recognizer.adjust_for_ambient_noise(source)
-            audio1 = self.recognizer.listen(source)
-            try:
-                message = self.recognizer.recognize_google(audio1)
-                return(message)
-            except sr.UnknownValueError:
-                self.talk('Please repeat')
-                return(self.recordOnce())
+            while(True):
+                audio1 = self.recognizer.listen(source)
+                try:
+                    message = self.recognizer.recognize_google(audio1)
+                    break
+                except sr.UnknownValueError:
+                    self.talk('Please repeat')
+        return(message)
+                    
 
 
 
@@ -73,7 +75,7 @@ class VoiceRecognizer(multiprocessing.Process):
     def configure(self):
         print(self.talkAndWait('Hello user, tell me your name'))
         print(self.talkAndWait('Nice name. What is your favorite color?'))
-        self.start()
+        self.run()
 
 
 
