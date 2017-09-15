@@ -11,11 +11,24 @@ class VoiceRecognizer(multiprocessing.Process):
         self.recognizer = sr.Recognizer()
         self.q=q
         self.config=self.q.get()
+        self._message = multiprocessing.Value(c_char_p, '')
         self.running=True
         if (self.config==1):
             self.configure()
         else:
             self.start()
+
+	@property
+	def message(self):
+		return self._message.value
+	
+	@message.getter
+	def message(self):
+		return self._message.value
+		
+	@message.setter
+	def message(self, txt):
+		self._message.value = txt
 
     def rec(self):
         if (self.running==True):
@@ -24,13 +37,13 @@ class VoiceRecognizer(multiprocessing.Process):
                 self.recognizer.adjust_for_ambient_noise(source)
                 audio1 = self.recognizer.listen(source)
                 try:
-                    message = self.recognizer.recognize_google(audio1)
+                    self.message = self.recognizer.recognize_google(audio1)
                     print(message)
                     if ('Celeste' in message):
                         self.running=False
                         self.talk('You said {0}'.format(message))
                 except sr.UnknownValueError:
-                    message='Untracked'
+                    self.message = ''
                 finally:
                     time.sleep(1)
 
@@ -40,15 +53,12 @@ class VoiceRecognizer(multiprocessing.Process):
             while(True):
                 audio1 = self.recognizer.listen(source)
                 try:
-                    message = self.recognizer.recognize_google(audio1)
+                    self.message = self.recognizer.recognize_google(audio1)
                     break
                 except sr.UnknownValueError:
                     self.talk('Please repeat')
-        return(message)
+        return(self.message)
                     
-
-
-
     def run(self):
         while True:
             self.rec()
@@ -64,6 +74,7 @@ class VoiceRecognizer(multiprocessing.Process):
         f.wait()
         del f
         return(self.recordOnce())
+        
     def talk(self,text):
         f=Popen("google_speech -l en '{0}'".format(text), shell=True)
         f.wait()
