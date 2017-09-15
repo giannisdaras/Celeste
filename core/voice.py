@@ -12,7 +12,10 @@ class VoiceRecognizer(multiprocessing.Process):
         self.q=q
         self.config=self.q.get()
         self.running=True
-        self.configure()
+        if (self.config==1):
+            self.configure()
+        else:
+            self.start()
 
     def rec(self):
         if (self.running==True):
