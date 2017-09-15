@@ -11,10 +11,7 @@ class VoiceRecognizer(multiprocessing.Process):
         self.recognizer = sr.Recognizer()
         self.q=q
         self.config=self.q.get()
-        if (self.config==1):
-            self.running=False
-        else:
-            self.running=True
+        self.running=True
         self.configure()
 
     def rec(self):
@@ -24,6 +21,10 @@ class VoiceRecognizer(multiprocessing.Process):
                 audio1 = self.recognizer.listen(source)
                 try:
                     message = self.recognizer.recognize_google(audio1)
+                    print(message)
+                    if ('Celeste' in message):
+                        self.running=False
+                        self.talk('You said {0}'.format(message))
                 except sr.UnknownValueError:
                     message='Untracked'
                 finally:
@@ -62,6 +63,7 @@ class VoiceRecognizer(multiprocessing.Process):
         f=Popen("google_speech -l en '{0}'".format(text), shell=True)
         f.wait()
         del f
+        self.running=True
 
 
 
