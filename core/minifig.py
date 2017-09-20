@@ -262,6 +262,9 @@ def initialize_from_directory(names, update_interval=10, source_dir='../haar', n
 	os.chdir(cwd)
 	return minifig_detector
 
-minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, new_weights=False)
-os.chdir('../haar/')
-	minifig_detector.evaluate()
+
+if __name__ == '__main__':
+	minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, new_weights=False)
+	os.chdir('../haar/')
+	minifig_detector.evaluate(source_file = 'increased_neural_data.txt')
+	
