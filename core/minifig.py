@@ -242,7 +242,7 @@ class MinifigDetector(multiprocessing.Process):
 		print('\nTest loss:', self.score[0])
 		print('Test accuracy:', self.score[1])
 
-def initialize_from_directory(names, update_interval, source_dir='../haar', new_weights=False):
+def initialize_from_directory(names, update_interval=10, source_dir='../haar', new_weights=False):
 	cwd = os.getcwd()
 	os.chdir(source_dir)
 	cascade = 'classifier/cascade.xml'
@@ -262,7 +262,6 @@ def initialize_from_directory(names, update_interval, source_dir='../haar', new_
 	os.chdir(cwd)
 	return minifig_detector
 
-if __name__ == '__main__':
-	minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, new_weights=False)
-	os.chdir('../haar/')
+minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, new_weights=False)
+os.chdir('../haar/')
 	minifig_detector.evaluate()

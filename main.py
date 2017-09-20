@@ -7,6 +7,8 @@ import time
 import threading
 import psycopg2
 import sys
+import core.minifig
+
 
 #Constants
 LEARNING_RATE = 0.2
@@ -15,8 +17,9 @@ class MainController(threading.Thread):
     ''' This class holds main controller that is responsible for synchronizing the
     rest of the controllers. Due to GIL it is obliged to be a threading.Thread '''
 
-    def __init__(self, controllers):
+    def __init__(self, controllers, update_interval=10):
         super(MainController, self).__init__()
+		self.update_interval = update_interval
 
         ''' Initializes controllers '''
         self.controllers = controllers
@@ -40,6 +43,16 @@ class MainController(threading.Thread):
         self.q = multiprocessing.Queue()
         self.q.put(self.config)
         self.voice=VoiceRecognizer(self.q)
+        
+        # Put data into table
+        while not self.q.empty():
+			self.cur.execute(self.q.get())
+		
+		# Create minifig detector
+		self.cur.execute('select name from people')
+		self.names = map(lambda x : x[0], self.cur.fetchall())
+		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)	
+        
         self.start()
 
 
@@ -72,16 +85,42 @@ class MainController(threading.Thread):
             return True
         except:
             return False
+            
+    def classify_command(self, query):
+		"""Classifies commands by edit distance"""
+		controller_min = -1 
+		state_min = -1
+		min_edit_distance = -1
+		
+		for i, controller in enumerate(self.controllers):
+			for j, state in enumerate(constroller.states):
+				d = edit_distance(query, state.name)
+				if d <= min_edit_distance or min_edit_distance == -1:
+					min_edit_distance = d
+					controller_min = i
+					state_min = j
+       
+       self.changeState(i,j)
+            
 
     def run(self):
         # start all controllers as threads
         for controller in self.controllers:
             controller.start()
 
+		self.minifig_detector.start()
+
         # main thread body
         while True:
             while self.running:
-                pass
+                
+                while not self.q.empty():
+					try:
+						query = self.q.get()
+						self.classify_command(query)
+					except:
+						break
+                
             if self.kill:
                 return
 

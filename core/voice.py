@@ -9,34 +9,13 @@ class VoiceRecognizer(multiprocessing.Process):
 		self.config=self.q.get()
 		self._message = multiprocessing.Value(c_char_p, '')
 		self.running=True
+		self.property_keys = ['name', 'color', 'music', 'category']
 		
 		if (self.config==1):
 			self.configure()
 		else:
 			self.start()
 
-	def edit_distance(self, str1, str2):
-		m, n = len(str1), len(str2)
-
-		dp = [[0 for x in range(n+1)] for x in range(m+1)]
-	 
-		for i in range(m+1):
-			for j in range(n+1):
-	 
-				if i == 0:
-					dp[i][j] = j    
-	 
-				elif j == 0:
-					dp[i][j] = i    
-				elif str1[i-1] == str2[j-1]:
-					dp[i][j] = dp[i-1][j-1]
-	 
-				else:
-					dp[i][j] = 1 + min(dp[i][j-1],       
-									   dp[i-1][j],       
-									   dp[i-1][j-1])    
-		return dp[m][n]
-	
 	@property
 	def message(self):
 		return self._message.value
@@ -48,15 +27,6 @@ class VoiceRecognizer(multiprocessing.Process):
 	@message.setter
 	def message(self, txt):
 		self._message.value = txt
-
-	def predict(self, controllers):
-		h = {}
-		for controller in controllers:
-			for state in controller.states:
-				h[state.name] = self.edit_distance(self.message, state.name)
-		result = max(h.iterkeys(), key=(lambda key: h[key]))
-		self.q.put(result)
-		return result
 
 	def recordOnce(self):
 		with sr.Microphone() as source:
@@ -81,7 +51,7 @@ class VoiceRecognizer(multiprocessing.Process):
 						if ('Celeste' in message):
 							self.message = self.message.strip(self.homeName)
 							self.talk('You said {0}'.format(message))
-							self.predict()
+							self.q.put(self.message)
 					except sr.UnknownValueError:
 						self.message = ''
 					finally:
@@ -106,9 +76,22 @@ class VoiceRecognizer(multiprocessing.Process):
 		del f
 		self.running = True
 
-	def configure(self):
-		print(self.talkAndWait('Hello user, tell me your name'))
-		print(self.talkAndWait('Nice name. What is your favorite color?'))
-		self.run()
+	def addPerson(self, i):
+		answers = []
+		for key in self.property_keys:
+			answers.append("'{}'".format(self.talkAndWait(key)))
+		
+		# Prepare POSTGRES COMMAND
+		query = "INSERT INTO (id,{}) people VALUES ({},{})".format(','.join(self.property_keys), i, ','.join(answers))
+		self.q.put(q)
+		
 
-	
+	def configure(self):
+		i = 0
+		while 1 == 1:
+			ans = self.talkAndWait('Add {} user?'.format('another' if i > 0 else '')
+			if edit_distance(ans, 'yes') < edit_distance(ans, 'no'):
+				self.addPerson(i)
+				i += 1
+			else:
+				break
