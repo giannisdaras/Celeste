@@ -8,6 +8,7 @@ import threading
 import psycopg2
 import sys
 import core.minifig
+from glob import glob
 
 
 #Constants
@@ -112,8 +113,7 @@ class MainController(threading.Thread):
 
         # main thread body
         while True:
-            while self.running:
-                
+            while self.running:                
                 while not self.q.empty():
 					try:
 						query = self.q.get()

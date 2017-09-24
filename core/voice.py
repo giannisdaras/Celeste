@@ -83,13 +83,13 @@ class VoiceRecognizer(multiprocessing.Process):
 		
 		# Prepare POSTGRES COMMAND
 		query = "INSERT INTO (id,{}) people VALUES ({},{})".format(','.join(self.property_keys), i, ','.join(answers))
-		self.q.put(q)
+		self.q.put(query)
 		
 
 	def configure(self):
 		i = 0
 		while 1 == 1:
-			ans = self.talkAndWait('Add {} user?'.format('another' if i > 0 else '')
+			ans = self.talkAndWait('Add {} user?'.format('another' if i > 0 else ''))
 			if edit_distance(ans, 'yes') < edit_distance(ans, 'no'):
 				self.addPerson(i)
 				i += 1
