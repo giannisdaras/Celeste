@@ -242,7 +242,7 @@ class MinifigDetector(multiprocessing.Process):
 		print('\nTest loss:', self.score[0])
 		print('Test accuracy:', self.score[1])
 
-def initialize_from_directory(names, update_interval=10, source_dir='../haar', new_weights=False):
+def initialize_from_directory(names, update_interval=10, source_dir='../haar', neural_data_filename = 'neural_data.txt', new_weights=False):
 	cwd = os.getcwd()
 	os.chdir(source_dir)
 	cascade = 'classifier/cascade.xml'
@@ -256,7 +256,7 @@ def initialize_from_directory(names, update_interval=10, source_dir='../haar', n
 		pass
 	finally:
 		if new_weights:
-			minifig_detector.train_cnn('neural_data.txt')
+			minifig_detector.train_cnn(neural_data_filename)
 			minifig_detector.model.save_weights('weights.h5')
 	
 	os.chdir(cwd)
@@ -264,7 +264,7 @@ def initialize_from_directory(names, update_interval=10, source_dir='../haar', n
 
 
 if __name__ == '__main__':
-	minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, new_weights=False)
+	minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, neural_data_filename='increased_neural_data.txt', new_weights=False)
 	os.chdir('../haar/')
-	minifig_detector.evaluate(source_file = 'increased_neural_data.txt')
+	minifig_detector.evaluate(source_file = 'original_neural_data.txt')
 	
