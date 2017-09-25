@@ -1,10 +1,55 @@
 from state_predictor import *
 from comm import *
 
-# This class holds controllers for various features
+class AuthorizationController(StatePredictor):
+	
+	def __init__(self, minifig_detector, rooms_auth, update_interval = 10):
+		self.minifig_detector = minifig_detector
+		self.rooms_auth = rooms_auth
+		
+		self.rooms = []
+		for r in self.rooms_auth:
+			self.rooms.extend(r)
+		self.rooms = list(set(self.rooms))
+		self.rooms_auth_status = {}
+		
+		for r in self.rooms:
+			self.rooms_auth_status[r] = False
+		
+		states = {
+			0 : State('do nothing', 0),
+			1 : State('open door', 1),
+			2 : State('close door', 2)	
+		}
+		self.update_interval = update_interval
+		super(AuthorizationController, self).__init__(states=states, sensors=[], update_interval=update_interval)
 
-# TODO Finish controller setup
-
+	def update(self):
+		
+		for lbl in self.minifig_detector.class_labels:
+			if self.minifig_detector.status[lbl] >= 1:
+				for r in self.rooms[lbl]:
+					self.rooms_auth_status[r] = True	
+		
+		for r in self.rooms:
+			if self.rooms_auth_status[r] == True:
+				self.open_door(r)
+			else:
+				self.close_door(r)
+		
+		self.reset_auth()
+			
+	def reset_auth(self):
+		for r in self.rooms:
+			self.rooms_auth_status[r] = False	
+		
+	def open_door(self, x):
+		pass
+		
+	def close_door(self, x):
+		pass
+	
+# Controllers based on state predictors
 # Example controlller
 class DummyController(StatePredictor):
 

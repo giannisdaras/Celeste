@@ -48,7 +48,12 @@ class MinifigDetector(multiprocessing.Process):
 		self.grayscale = grayscale
 		self.num_classes = len(minifigs)
 		self.minifigs = minifigs
-		self.class_labels = map(lambda x: x.name, self.minifigs)
+		
+		self._class_labels = multiprocessing.Array(c_char_p, self.num_classes)
+		for i, x in enumerate(self.minifigs):
+			self._class_labels[i] = x.name 
+		
+		
 		self.model.add(Convolution2D(32, kernel_size=(
 			3, 3), padding='same', activation='relu', input_shape=(size[0], size[1], 1 if grayscale else 3)))
 		
@@ -92,7 +97,10 @@ class MinifigDetector(multiprocessing.Process):
 		self.number_of_people = 0
 		self.running = False
 		self.update_interval = update_interval
+		self._status = multiprocessing.Array('i', self.num_classes)
 		self.status = {}
+		
+		
 		for lbl in self.class_labels:
 			self.status[lbl] = 0
 			
@@ -241,6 +249,19 @@ class MinifigDetector(multiprocessing.Process):
 		self.score = self.model.evaluate(x, y, verbose=1)
 		print('\nTest loss:', self.score[0])
 		print('Test accuracy:', self.score[1])
+		
+	@property
+	def class_labels(self):
+		return list(self._class_labels)
+		
+	@class_labels.getter
+	def class_labels(self, i):
+		return self._class_labels[i]
+
+	@class_labels.setter
+	def class_labels(self, i, lbl):
+		self._class_labels[i] = lbl
+
 
 def initialize_from_directory(names, update_interval=10, source_dir='../haar', neural_data_filename = 'neural_data.txt', new_weights=False):
 	cwd = os.getcwd()

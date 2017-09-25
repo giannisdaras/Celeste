@@ -44,7 +44,6 @@ class MainController(threading.Thread):
 		self.config = int(self.cur.fetchall()[0][2])
 		self.q = multiprocessing.Queue()
 		self.q.put(self.config)
-
 		self.names=next(os.walk('./haar/positive_images'))[1]
 		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)	
 		if (self.config):
@@ -105,7 +104,6 @@ class MainController(threading.Thread):
 					controller_min = i
 					state_min = j
 		self.changeState(i,j)
-			
 
 	def run(self):
 		# start all controllers as threads
@@ -116,7 +114,7 @@ class MainController(threading.Thread):
 
 		# main thread body
 		while True:
-			while self.running:                
+			while self.running:
 				while not self.q.empty():
 					try:
 						query = self.q.get()

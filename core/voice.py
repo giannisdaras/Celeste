@@ -4,11 +4,11 @@ class VoiceRecognizer(multiprocessing.Process):
 	def __init__(self,q,homeName = 'Celeste'):
 		super(VoiceRecognizer, self).__init__()
 		self.recognizer = sr.Recognizer()
-		self.q=q
+		self.q= q
 		self.homeName = homeName
 		self.config=self.q.get()[0]
 		self._message = multiprocessing.Value(c_char_p, '')
-		self.running=True
+		self.running = True
 		self.property_keys = ['name', 'color', 'music', 'category']
 		
 		if (self.config==1):
@@ -88,6 +88,10 @@ class VoiceRecognizer(multiprocessing.Process):
 
 	def configure(self):
 		i = 0
-		while 1 == 1:
+		while True:
 			ans = self.talkAndWait('Add {} user?'.format('another' if i > 0 else ''))
-			
+			if edit_distance(ans, 'yes') < edit_distance(ans, 'no'):
+				self.addPerson(i)
+				i += 1
+			else:
+				break
