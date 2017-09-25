@@ -6,7 +6,7 @@ class VoiceRecognizer(multiprocessing.Process):
 		self.recognizer = sr.Recognizer()
 		self.q=q
 		self.homeName = homeName
-		self.config=self.q.get()
+		self.config=self.q.get()[0]
 		self._message = multiprocessing.Value(c_char_p, '')
 		self.running=True
 		self.property_keys = ['name', 'color', 'music', 'category']
@@ -90,8 +90,4 @@ class VoiceRecognizer(multiprocessing.Process):
 		i = 0
 		while 1 == 1:
 			ans = self.talkAndWait('Add {} user?'.format('another' if i > 0 else ''))
-			if edit_distance(ans, 'yes') < edit_distance(ans, 'no'):
-				self.addPerson(i)
-				i += 1
-			else:
-				break
+			
