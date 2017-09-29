@@ -8,7 +8,10 @@ import threading
 import psycopg2
 import sys
 import core.minifig
-
+try:
+	from core.comm import *
+except:
+	pass
 
 #Constants
 LEARNING_RATE = 0.2
@@ -17,16 +20,25 @@ class MainController(threading.Thread):
 	''' This class holds main controller that is responsible for synchronizing the
 	rest of the controllers. Due to GIL it is obliged to be a threading.Thread '''
 
-	def __init__(self, controllers, update_interval=10):
-		super(MainController, self).__init__()
+	def __init__(self, controllers = [], update_interval=10):
 		self.update_interval = update_interval
-
-		''' Initializes controllers '''
+		
+		'''Threading related stuff'''
+		super(MainController, self).__init__()
+		try:
+			self.board_manager = BoardManager()
+			self.board = board_manager.Board()
+		except:
+			pass
+		self.lock = self.manager.Lock()
 		self.controllers = controllers
 		self.running = True
 		self.kill=False
 
-		''' Controllers initialization stops '''
+			
+		
+		
+		
 
 		''' Establish connection with database'''
 		try:
@@ -47,18 +59,29 @@ class MainController(threading.Thread):
 		# Put data into table from voice config queries
 		while not self.q.empty():
 			self.cur.execute(self.q.get())
+			self.conn.commit()	
 		
 		# Create minifig detector
-		self.cur.execute('select name from people')
-		self.names = map(lambda x : x[0], self.cur.fetchall())
+		self.cur.execute('select name, rooms from people')
+		response = self.cur.fetchall()
+		self.names = map(lambda x : x[0], response)
+		self.rooms_auth = self.manager.dict(zip(self.names, map(lambda x : x[1], response)))
+		
 		
 		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)	
+		
+		# Basic Controller Setup
+		
+		self.controllers.append(AuthorizationController(minifig_detector=self.minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
+		
+		
 		
 		self.start()
 
 
 	def changeState(self, i, k, wait_interval=0.5):
-		self.controllers[i].state = self.controllers[i].states[k]
+		self.controllers[i].stateid = k
+		#self.controllers[i].state = self.controllers[i].states[k]
 		self.controllers[i].state.onActivation(self.controllers[i].getData())
 		time.sleep(wait_interval)
 		y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)

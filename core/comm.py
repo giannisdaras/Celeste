@@ -8,15 +8,23 @@ class BoardNotFoundException(Exception):
 		super(BoardNotFoundException, self).__init__(msg)
 
 
-def get_board(num_tries=10):
-	for i in range(num_tries):
-		try:
-			board = PyMata('/dev/ttyACM{0}'.format(i), verbose=False)
-			return board
-		except:
-			continue
-	raise BoardNotFoundException()
+class Board(PyMata):
+	def __init__(self, num_tries=10):
+		for i in range(num_tries):
+			try:
+				super(Board, self).__init__('/dev/ttyACM{0}'.format(i), verbose=False)
+				return
+			except:
+				continue
+		raise BoardNotFoundException()
 
+class BoardManager(multiprocessing.managers.Manager):
+		
+		def __init__(self):
+			super(BoardManager, self).__init__()
+			super(BoardManager, self).register('Board', Board)
+			super(BoardManager, self).start()
+	
 class Sensor(object):
 
 	def __init__(self, name, output_ports):

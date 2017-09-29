@@ -8,8 +8,8 @@ class VoiceRecognizer(multiprocessing.Process):
 		self.homeName = homeName
 		self.config=self.q.get()
 		self._message = multiprocessing.Value(c_char_p, '')
-		self.running = True
-		self.property_keys = ['name', 'color', 'music', 'category']
+		self._running = multiprocessing.Value('b', True)
+		self.property_keys = ['name', 'color', 'music','gender','category']
 		
 		if (self.config==1):
 			self.configure()
@@ -95,3 +95,17 @@ class VoiceRecognizer(multiprocessing.Process):
 				i += 1
 			else:
 				break
+
+	@property
+	def running(self):
+		return self._running.value == True
+		
+	@running.setter
+	def running(self, b):
+		self._running.value = b
+		
+	@running.getter
+	def running(self):
+		return self._running.value == True
+		
+	

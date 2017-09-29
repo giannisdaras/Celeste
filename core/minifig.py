@@ -95,7 +95,7 @@ class MinifigDetector(multiprocessing.Process):
 		
 		
 		self.number_of_people = 0
-		self.running = False
+		self._running = multiprocessing.Value('b', True)
 		self.update_interval = update_interval
 		self._status = multiprocessing.Array('i', self.num_classes)
 		self.status = {}
@@ -261,6 +261,20 @@ class MinifigDetector(multiprocessing.Process):
 	@class_labels.setter
 	def class_labels(self, i, lbl):
 		self._class_labels[i] = lbl
+		
+	@property
+	def running(self):
+		return self._running.value == True
+		
+	@running.setter
+	def running(self, b):
+		self._running.value = b
+		
+	@running.getter
+	def running(self):
+		return self._running.value == True
+		
+		
 
 
 def initialize_from_directory(names, update_interval=10, source_dir='../haar', neural_data_filename = 'neural_data.txt', new_weights=False):
