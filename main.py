@@ -22,7 +22,7 @@ class MainController(threading.Thread):
 
 	def __init__(self, controllers = [], update_interval=10):
 		self.update_interval = update_interval
-		
+
 		'''Threading related stuff'''
 		super(MainController, self).__init__()
 		try:
@@ -35,10 +35,10 @@ class MainController(threading.Thread):
 		self.running = True
 		self.kill=False
 
-			
-		
-		
-		
+
+
+
+
 
 		''' Establish connection with database'''
 		try:
@@ -54,28 +54,36 @@ class MainController(threading.Thread):
 		self.config = int(self.cur.fetchall()[0][2])
 		self.q = multiprocessing.Queue()
 		self.q.put(self.config)
+		self.names=next(os.walk('./haar/positive_images'))[1]
+		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)
+		if (self.config):
+			for i in range(len(self.names)):
+				query="insert into people (id,name,gender) values ({},'{}','male')".format(i,self.names[i])
+				self.cur.execute(query)
+			self.conn.commit()
 		self.voice=VoiceRecognizer(self.q)
-		
-		# Put data into table from voice config queries
+
+
+		# Put data into table
 		while not self.q.empty():
 			self.cur.execute(self.q.get())
-			self.conn.commit()	
-		
+			self.conn.commit()
+
 		# Create minifig detector
 		self.cur.execute('select name, rooms from people')
 		response = self.cur.fetchall()
 		self.names = map(lambda x : x[0], response)
 		self.rooms_auth = self.manager.dict(zip(self.names, map(lambda x : x[1], response)))
-		
-		
-		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)	
-		
+
+
+		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)
+
 		# Basic Controller Setup
-		
+
 		self.controllers.append(AuthorizationController(minifig_detector=self.minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
-		
-		
-		
+
+
+
 		self.start()
 
 
@@ -109,13 +117,13 @@ class MainController(threading.Thread):
 			return True
 		except:
 			return False
-			
+
 	def classify_command(self, query):
 		"""Classifies commands by edit distance"""
-		controller_min = -1 
+		controller_min = -1
 		state_min = -1
 		min_edit_distance = -1
-		
+
 		for i, controller in enumerate(self.controllers):
 			for j, state in enumerate(constroller.states):
 				d = edit_distance(query, state.name)
@@ -135,14 +143,13 @@ class MainController(threading.Thread):
 		# main thread body
 		while True:
 			while self.running:
-				
 				while not self.q.empty():
 					try:
 						query = self.q.get()
 						self.classify_command(query)
 					except:
 						break
-				
+
 			if self.kill:
 				return
 

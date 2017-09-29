@@ -6,7 +6,7 @@ class VoiceRecognizer(multiprocessing.Process):
 		self.recognizer = sr.Recognizer()
 		self.q= q
 		self.homeName = homeName
-		self.config=self.q.get()
+		self.config=self.q.get()[0]
 		self._message = multiprocessing.Value(c_char_p, '')
 		self._running = multiprocessing.Value('b', True)
 		self.property_keys = ['name', 'color', 'music','gender','category']
