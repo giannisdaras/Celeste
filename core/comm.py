@@ -8,16 +8,18 @@ class BoardNotFoundException(Exception):
 		super(BoardNotFoundException, self).__init__(msg)
 
 
-class Board(PyMata):
+class Board(Arduino):
 	def __init__(self, num_tries=10):
 		for i in range(num_tries):
 			try:
-				super(Board, self).__init__('/dev/ttyACM{0}'.format(i), verbose=False)
+				super(Board, self).__init__('/dev/ttyACM{0}'.format(i))
 				return
 			except:
 				continue
 		raise BoardNotFoundException()
-
+		self.it = util.Iterator(self)
+		
+		
 class BoardManager(multiprocessing.managers.Manager):
 		
 		def __init__(self):
@@ -37,7 +39,17 @@ class Sensor(object):
 	def __len__(self):
 		return self.output_ports
 
-
+class Servo(object):
+	
+	def __init__(self, servo_pin, board):
+		self.board = board
+		self.pin = self.board.get_pin('d:{}:s'.format(servo_pin))
+		self.pin.write(0)
+		
+	def rotate(self, x):
+		self.pin.write(x)
+		self.pin.write(0)
+		
 class DummySensor(Sensor):
 	""" Sensor that outputs random data """
 
@@ -67,54 +79,60 @@ class Camera(Sensor):
 	def __del__(self):
 		self.cam.release()
 
-
 class ArduinoDigitalSensor(Sensor):
-
+	pins=[]
 	def __init__(self, name, board, input_pins=[]):
 		super(ArduinoDigitalSensor, self).__init__(name, output_ports=len(input_pins))
 		self.board = board
 		self.input_pins = input_pins
 		for p in input_pins:
-			self.board.set_pin_mode(p, board.INPUT, board.DIGITAL)
+			self.pins.append(self.board.get_pin('d:%d:i' % p))
+			#self.board.set_pin_mode(p, board.INPUT, board.DIGITAL)
+
 
 	def getData(self):
+
+			 
 		try:
-			self.board.capability_query()
 			x = np.array([])
-			response = self.board.get_digital_response_table()
-			for p in self.input_pins:
-				x = np.append(x, response[p][0])
+			for p in self.pins:
+				x = np.append(x,p.read())
 			return x
 		except:
 			return None
+	def  writeData(self, x):
+	   assert(len(x)==len(self.input_pins))
+	   for i in range(len(self.input_pins)):
+		  self.board.digital[self.input_pins[i]].write(x[i])
+		  
 
-	def writeData(self, x):
-		assert(len(x) == len(self.input_pins))
-		try:
-			for i in range(len(self.input_pins)):
-				self.board.digital_write(self.input_pins[i], x[i])
-			return True
-		except:
-			return False
+
+
+
+
+class LEDArray(ArduinoDigitalSensor):
+	pins=[]
+	def __init__(self, name, board, input_pins=[]):
+		self.board=board
+		self.input_pins=input_pins
+		for p in input_pins:
+			self.pins.append(board.get_pin('d:%d:o' %p))
 
 
 class ArduinoAnalogSensor(Sensor):
-
+	pins=[]
 	def __init__(self, name, board, input_pins=[]):
-		super(ArduinoAnalogSensor, self).__init__(name, output_ports=len(input_pins))
 		self.board = board
 		self.input_pins = input_pins
 		for p in input_pins:
-			self.board.set_pin_mode(p, board.INPUT, board.ANALOG)
+			self.pins.append(self.board.get_pin('a:%d:i' % p))
+	
 
 	def getData(self):
 		try:
-			self.board.capability_query()
 			x = np.array([])
-			response = self.board.get_analog_response_table()
-
-			for p in self.input_pins:
-				x = np.append(x, response[p][0])
+			for p in self.pins:
+				x = np.append(x, p.read())
 			return x
 		except:
 			return None
@@ -123,16 +141,7 @@ class ArduinoAnalogSensor(Sensor):
 		assert(len(x) == len(self.input_pins))
 		try:
 			for i in range(len(self.input_pins)):
-				self.board.analog_write(self.input_pins[i], x[i])
+				self.board.analog[self.input_pins[i]].write(x[i])
 			return True
 		except:
-			return False
-
-class LEDArray(ArduinoDigitalSensor):
-
-	def __init__(self, name, board, input_pins=[]):
-		super(LEDArray, self).__init__(
-			name, len(input_pins), board, input_pins)
-
-		for pin in input_pins:
-			self.board.set_pin_mode(pin, board.OUTPUT, board.DIGITAL)
+			return False            
