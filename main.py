@@ -76,7 +76,7 @@ class MainController(threading.Thread):
 		self.rooms_auth = self.manager.dict(zip(self.names, map(lambda x : x[1], response)))
 		self.music_preferences = self.manager.dict(zip(self.names, map(lambda x : x[2], response)))
 
-		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)
+		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, status=self.manager.dict(), update_interval=update_interval, source_dir='./haar', new_weights=False)
 
 		# Basic Controller Setup
 

@@ -39,7 +39,7 @@ class MinifigDetector(multiprocessing.Process):
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		#self.model.add(Dropout(0.2))
 	
-	def __init__(self, minifigs, num_stages=3, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml', suppress_classification = False):
+	def __init__(self, minifigs, status, num_stages=3, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml', suppress_classification = False):
 		super(MinifigDetector, self).__init__()
 		self.model = Sequential()
 		self.camera = camera
@@ -98,7 +98,7 @@ class MinifigDetector(multiprocessing.Process):
 		self._running = multiprocessing.Value('b', True)
 		self.update_interval = update_interval
 		self._status = multiprocessing.Array('i', self.num_classes)
-		self.status = {}
+		self.status = status
 		
 		
 		for lbl in self.class_labels:

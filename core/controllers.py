@@ -104,16 +104,9 @@ class PartyModeController(StatePredictor):
 			self.music_queries[lbl] = []	
 			for track in self.music_preferences[lbl]:
 				results = self.spotipy.search( q=track, limit=1)
-				self.music_queries[lbl].append(results)
-				self.tracks[track] = 0
-				
-
-	#	if token:
-	#		print(results.keys())
-	#			for i, t in enumerate(results['tracks']['items']):
-	#print ' ', i, t['name']
-	#link=t['preview_url']
-	#webbrowser.open_new(link)
+				t = results['tracks']['items']
+				self.music_queries[lbl].append(t)
+				self.tracks[t] = 0
 			
 	def update(self):
 		
@@ -123,8 +116,12 @@ class PartyModeController(StatePredictor):
 	def party_rock(self):
 		
 		for lbl in self.minifig_detector.class_labels:
-			pass
-			
+			if self.minifig_detector.status[lbl] >= 1:
+				self.tracks[self.music_queries[lbl]] += 1
+		
+		t = max(zip(self.tracks.keys(), self.tracks.values()), key = lambda x : x[1])[0]		
+		result_url = t['preview_url']			
+		webbrowser.open_new(result_url)	
 			
 class EnergySaverController(StatePredictor):
 	
