@@ -39,7 +39,7 @@ class MinifigDetector(multiprocessing.Process):
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		#self.model.add(Dropout(0.2))
 	
-	def __init__(self, minifigs, num_stages=3, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml'):
+	def __init__(self, minifigs, num_stages=3, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml', suppress_classification = False):
 		super(MinifigDetector, self).__init__()
 		self.model = Sequential()
 		self.camera = camera
@@ -93,8 +93,8 @@ class MinifigDetector(multiprocessing.Process):
         classes=[str(i) for i in range(self.num_classes)]
         )
 		
-		
-		self.number_of_people = 0
+		self.suppress_classification = suppress_classification
+		self._number_of_people = multiprocessing.Value('i', 0)
 		self._running = multiprocessing.Value('b', True)
 		self.update_interval = update_interval
 		self._status = multiprocessing.Array('i', self.num_classes)
@@ -104,8 +104,18 @@ class MinifigDetector(multiprocessing.Process):
 		for lbl in self.class_labels:
 			self.status[lbl] = 0
 			
+	@property
+	def number_of_people(self):
+		return self._number_of_people.value
+	
+	@number_of_people.getter
+	def number_of_people(self):
+		return self._number_of_people.value
 		
-
+	@number_of_people.setter
+	def number_of_people(self, x):
+		self._number_of_people.value = x
+		
 	def reset_status(self):
 		self.number_of_people = 0
 		for lbl in self.class_labels:
@@ -200,7 +210,8 @@ class MinifigDetector(multiprocessing.Process):
 
 		for (x, y, w, h) in lego_faces:
 			cropped = self.transform(img[y: y + h, x: x + w])
-			self.predict_face(cropped, verbose=verbose)
+			if not self.suppress_classification:
+				self.predict_face(cropped, verbose=verbose)
 
 		if verbose:
 			print self.status
