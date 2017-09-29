@@ -198,12 +198,37 @@ cam.release()
 
 cmd('find ./positive_images -iname "*.jpg" > positives.txt')
 
-# TODO Haar training
+# Haar training stage
+
+droplet_name = 'opencv-droplet'
+droplet_user = 'root'
+droplet_password = 'opencv-doplet'
+deploy_to_droplet = False
 
 print 'Start Haar-Classifier training? [y/n]:'
 ans = raw_input().strip('\n')
 if not ('y' in ans):
     sys.exit(0)
+
+print 'Deploy to droplet? [y/n]'
+ans = raw_input().strip('\n')
+if 'y' in ans:
+    try:
+        import paramiko
+        ssh = paramiko.client.SSHClient()
+        ssh.connect(droplet_name, user=droplet_user, password=droplet_password)
+        fpt = ssh.open_sftp()
+        cmd = ssh.exec_command
+        deploy_to_droplet = True
+    except:
+        print 'Could not be deployed to droplet'
+        cmd = os.system
+
+    print 'Moving datasets to droplet'
+    try:
+		pass
+    except:
+        print 'Could not upload files'
 
 print 'User perl script to generate samples? [y/n]'
 ans = raw_input().strip('\n')
@@ -211,14 +236,14 @@ ans = raw_input().strip('\n')
 cr_smp = 'opencv_createsamples -bgcolor 0 -bgthresh 0 -maxxangle 1.1 -maxyangle 1.1 -maxzangle 0.5 -maxidev 40 -w {} -h {}'.format(
     size_x, size_y)
 
-if 'y' in ans:
-    print 'Generating Samples: How many samples do you want? [default 7000]'
-    num_samples = int(raw_input())
+print 'Generating Samples: How many samples do you want? [default 1900]'
+num_samples = raw_input()
 
+if 'y' in ans:
     cmd('perl createsamples.pl  positives.txt negatives.txt samples {} "{}"'.format(
         num_samples, cr_smp))
 else:
-    cmd(cr_smp)
+    cmd(cr_smp + ' -num ' + num_samples)
 
 print 'Merging samples with mergevec'
 
@@ -228,7 +253,7 @@ mergevec.merge_vec_files('samples/', 'samples.vec')
 
 print 'Enter number of stages'
 numStages = int(raw_input())
-
+num_pos = 1800
 try:
     os.mkdir('classifier')
 except:
@@ -238,7 +263,12 @@ print 'Starting training'
 cmd('''opencv_traincascade -data classifier -vec samples.vec -bg negatives.txt\
    -numStages {} -minHitRate 0.999 -maxFalseAlarmRate 0.5 -numPos {}\
    -numNeg {} -w {} -h {} -mode ALL -precalcValBufSize 1024\
-   -precalcIdxBufSize 1024 -featureType LBP'''.format(numStages, num_samples, 2 * num_samples, size_x, size_y))
+   -precalcIdxBufSize 1024 -featureType LBP'''.format(numStages, num_pos, num_pos // 2, size_x, size_y))
 
 print 'training completed!'
+if deploy_to_droplet:
+    ftp.get('./classifier/*.xml')
+    ftp.close()
+    ssh.close()
+
 sys.exit(0)

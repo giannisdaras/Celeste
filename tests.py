@@ -4,6 +4,8 @@ from core.minifig import *
 from core.comm import *
 from main import *
 from core.voice import *
+from core.__init__ import *
+from core.controllers import *
 
 
 class VoiceRecognizerUnittest(unittest.TestCase):
@@ -58,7 +60,25 @@ class MainControllerUnittest(unittest.TestCase):
         self.main_controller.start()
         time.sleep(10)
         self.main_controller.shutDown()
-
+        
+class ControllerUnittest(unittest.TestCase):
+	
+		def setUp(self):
+			states = {
+				0: State('do nothing', 0),
+				5: State('show message',5),
+			}
+			sensors = DummySensor('s1', 0, 15)
+		    self.state_predictor = StatePredictor(states = states, sensors = sensors)
+		    self.state_predictor.train('data/training_data.csv','data/training_results.csv')
+		    
+		    
+		def testPredictor(self):
+			self.state_predictor.start()
+			time.sleep(5)
+			self.state_predictor.terminate()
+    
+    
 
 if __name__ == '__main__':
     unittest.main()

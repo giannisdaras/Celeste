@@ -71,9 +71,10 @@ class StatePredictor(multiprocessing.Process):
         self.based_on_current_time = based_on_current_time
         self.based_on_previous_states = based_on_previous_states
         self.state = self.states[initial_state]
+        self._stateid = multiprocessing.Value('i', self.state.stateid)
         self.start_time = time.time()
         self.layout = layout
-        self.running = True
+        self._running = multiprocessing.Value('b', True)        
         self.update_interval = update_interval
         self.queue = queue
         # Input Configuration:
@@ -126,6 +127,7 @@ class StatePredictor(multiprocessing.Process):
         if not onehot:
             y = keras.utils.to_categorical(y, self.num_classes)
         self.num_train += len(x)
+        x = normalize(x)
         self.model.fit(x, y, epochs=epochs, batch_size=batch_size)
 
     def saveWeights(self, filename='weights.h5'):
@@ -139,6 +141,7 @@ class StatePredictor(multiprocessing.Process):
 
     def predict_next(self, x, verbose=True):
         """ Predct next state index = argmax (y_prob) """
+        x = normalize(x)
         y_prob = self.model.predict(np.array([x]))
         index = np.argmax(y_prob)
         if verbose:
@@ -208,6 +211,32 @@ class StatePredictor(multiprocessing.Process):
     @idle.getter
     def idle(self):
         return self.state.stateid == 0
+        
+    @property
+    def stateid(self):
+		return self._stateid.value
+	
+	@stateid.getter
+	def stateid(self):
+		return self._stateid.value
+		
+	@stateid.setter
+	def stateid(self, x):
+		self.state = self.states[x]
+		self._stateid.value = x
+		    
+	@property
+	def running(self):
+		return self._running.value == True
+		
+	@running.setter
+	def running(self, b):
+		self._running.value = b
+		
+	@running.getter
+	def running(self):
+		return self._running.value == True
+
 
 # Testcase
 
