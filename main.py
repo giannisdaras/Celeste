@@ -95,10 +95,11 @@ class MainController(threading.Thread):
 		y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
 
 		n = int(LEARNING_RATE * self.controllers[i].num_train)
-		x = self.constrollers[i].getData()
-		for i in range(n):
-			self.constrollers[i].model.train_on_batch(np.array([x]), y)
-		self.controllers[i].num_train += n
+		x = self.controllers[i].getData()
+		if data != []:
+			for i in range(n):
+				self.controllers[i].model.train_on_batch(np.array([x]), y)
+			self.controllers[i].num_train += n
 		self.controllers[i].resume()
 
 	def joinAll(self):

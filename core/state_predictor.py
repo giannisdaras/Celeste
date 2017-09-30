@@ -173,6 +173,7 @@ class StatePredictor(multiprocessing.Process):
 
         # use softmax
         self.state = self.states[index]
+        self.stateid = self.states[index].stateid
         print 'New state: {0}'.format(self.states[index].name)
 
         # Retrain our model

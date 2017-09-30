@@ -122,114 +122,52 @@ class PartyModeController(StatePredictor):
 		t = max(zip(self.tracks.keys(), self.tracks.values()), key = lambda x : x[1])[0]		
 		result_url = t['preview_url']			
 		webbrowser.open_new(result_url)	
-			
+				
 class EnergySaverController(StatePredictor):
-	
-	def __init__(self, update_interval):		
-		states = {
-			0: 'do nothing',
-			1 : 'close shutters',
-			2 : 'open lights',
-			3 : 'increase temperature',
-			4 : 'decrease temperature',
-		}
-		sensors = []
-		states
-		super(EnergySaverController, self).__init__(states, sensors)
-		
-	
-	
-# Controllers based on state predictors
-# Example controlller
-class DummyController(StatePredictor):
 
-	def __init__(self, update_interval = 1):
-		sensors = [
-			DummySensor('number_of_people', 1, 0, 20),
-			DummySensor('mood', 1, 0, 10),
-			DummySensor('light', 1, 0, 255),
-			DummySensor('temperature', 1, 10, 40)
-		]
+    def __init__(self):
+        states = {
+            0 : State('do nothing',0),
+            1 : State('show message',1)
+        }
+        self.timeon=0
+        self.counter=0
+        states[1].addSubscriber(EnergySaverController.showmessage)
+        sensors = [ledarray]
+        super(EnergySaverController, self).__init__(states, sensors,update_interval=1)
 
-		states = {
-			0: State('do nothing', 0),
-			1: State('raise temperature', 1),
-			2: State('decrease temperature', 2),
-			3: State('turn on music', 3),
-			4: State('close shutters', 4),
-		}
-		super(DummyController, self).__init__(states, sensors, update_interval=update_interval)
+    def getData(self):
+        x = np.array([])
+        for sensor in self.sensors:
+            d = sensor.getData()
+            x = np.append(x, d)
+        return x 
+        
+    def update(self):
+        """ Update NN """
 
-class PlantWateringController(StatePredictor):
+        print 'Updating'
 
-	def __init__(self):
-		states = {
-			0 : 'do nothing',
-			1 : 'water'
-		}
-		states[1].addSubscriber(PlantWateringController.water)
-		sensors = []
-		super(PlantWateringController, self).__init__(states, sensors)
+        x = self.getData()
+        self.timeon += sum(x)
+        self.counter=self.counter+1
+        self.timeon=normalize(self.timeon, (l,r) = (0, 24))
+        index = self.predict_next(self.timeon)
 
-	@staticmethod
-	def water(x):
-		pass
+        # use softmax
+        self.state = self.states[index]
+        print ('New state: {0}'.format(self.states[index].name))
 
-class FridgeController(StatePredictor):
+        # Retrain our model
+        if self.counter == 15:
+            self.counter =0
+            print 'Retraining'
+            y = keras.utils.to_categorical(index, self.num_classes)
+            self.model.train_on_batch(np.array([self.timeon]), y)
+            self.num_train += 1
 
-	def __init__(self):
-		states = {
-			0 : 'do nothing',
-			1 : 'increase temperature',
-			2 : 'decrease temperature'
-		}
-		states[1].addSubscriber(FridgeController.increase_temperature)
-		states[2].addSubscriber(FridgeController.decrease_temperature)
+        self.state.onActivation(self)
 
 
-		sensors = []
-		super(FridgeController, self).__init__(states, sensors)
-
-	@staticmethod
-	def increase_temperature(x):
-		pass
-
-	@staticmethod
-	def decrease_temperature(x):
-		pass
-
-class AlarmController(StatePredictor):
-
-	def __init__(self):
-		states = {
-			0 : 'do nothing',
-			1 : 'alarm',
-			2 : 'snooze'
-		}
-		states[1].addSubscriber(AlarmController.alarm)
-		states[2].addSubscriber(AlarmController.snooze)
-		sensors = []
-		super(AlarmController, self).__init__(states, sensors)
-
-	@staticmethod
-	def alarm(x):
-		pass
-
-	@staticmethod
-	def snooze(x):
-		pass
-
-class PetFeederController(StatePredictor):
-
-	def __init__(self):
-		states = {
-			0 : 'do nothing',
-			1 : 'feed pet'
-		}
-		states[1].addSubscriber(PetFeederController.feed)
-		sensors = [] # TODO add desired sensors
-		super(PetFeederController, self).__init__(states, sensors)
-
-	@staticmethod
-	def feed(x):
-		pass
+    def showmessage(self):
+        print 'Daily usage exceeded'		
