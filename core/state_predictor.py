@@ -51,7 +51,8 @@ class StatePredictor(multiprocessing.Process):
 			update_interval=1,
 			based_on_current_time=True,
 			based_on_previous_states=True,
-			queue= multiprocessing.Queue()):
+			queue= multiprocessing.Queue(),
+			board_queue = None):
 		"""Constructor class arguments:
 			states : a dictionary of states
 			sensors : a list of sensors
@@ -104,7 +105,8 @@ class StatePredictor(multiprocessing.Process):
 		self.model.compile(loss='categorical_crossentropy',
 						   optimizer=optimizer,
 						   metrics=['accuracy'])
-
+		
+		self.board_queue = board_queue
 
 
 
