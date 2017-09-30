@@ -21,12 +21,14 @@ import android.view.Window;
 import android.view.WindowManager;
 
 import java.io.File;
+import java.text.MessageFormat;
 
 
 public class HologramProjector extends AppCompatActivity {
     private DatabaseReference mDatabase;
     private VideoView videoView;
     private MediaController mp;
+    private String url;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,27 +37,21 @@ public class HologramProjector extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_hologram_projector);
         videoView = (VideoView)findViewById(R.id.videoView);
-
         mDatabase = FirebaseDatabase.getInstance().getReference("url");
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                String url= (String) dataSnapshot.getValue();
-                Toast.makeText(getApplicationContext(),url, Toast.LENGTH_SHORT).show();
-                if (videoView.isPlaying()){
-                    Toast.makeText(getApplicationContext(),"Playing already", Toast.LENGTH_SHORT).show();
-                    videoView.stopPlayback();
-                    mp.removeAllViews();
-                }
-                else{
-                    Toast.makeText(getApplicationContext(),"WTF?", Toast.LENGTH_SHORT).show();
 
+                if (videoView.isPlaying()){
+                    Toast.makeText(getApplicationContext(),"Still playing", Toast.LENGTH_SHORT).show();
+                    videoView.stopPlayback();
                 }
-                mp=new MediaController(getApplicationContext());
-                videoView.setVideoURI(Uri.parse("android.resource://"+getPackageName()+"/raw/kid"));
-                videoView.setMediaController(mp);
-//                videoView.requestFocus();
+                url=(String)dataSnapshot.getValue();
+                videoView.setVideoURI(Uri.parse("android.resource://"+getPackageName()+(String) MessageFormat.format("/raw/{}",url)));
                 videoView.start();
+
+
+
                 
 
             }

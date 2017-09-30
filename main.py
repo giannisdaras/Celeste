@@ -84,7 +84,11 @@ class MainController(threading.Thread):
 
 		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
 		self.hologramQuery=self.manager.Value(c_char_p,"")
+<<<<<<< HEAD
 		self.controllers.append(HologramController(self.hologramQuery))
+=======
+		self.controllers.append(HologramController(self.hologramQuery, update_interval=self.update_interval))
+>>>>>>> b67a1be5b55a2665be9158346b03ba7d5d13b776
 		
 		self.start()
 
@@ -94,7 +98,7 @@ class MainController(threading.Thread):
 		#self.controllers[i].state = self.controllers[i].states[k]
 		self.controllers[i].state.onActivation(self.controllers[i].getData())
 		time.sleep(wait_interval)
-		y = keras.utils.to_categorical(k, self.constrollers[i].num_classes)
+		y = keras.utils.to_categorical(k, self.controllers[i].num_classes)
 
 		n = int(LEARNING_RATE * self.controllers[i].num_train)
 		x = self.controllers[i].getData()
@@ -126,17 +130,21 @@ class MainController(threading.Thread):
 		controller_min = -1
 		state_min = -1
 		min_edit_distance = -1
+		name_min = ''
+		#print 'Query is ' + query
 
 		for i, controller in enumerate(self.controllers):
-			for j, state in enumerate(constroller.states):
+			for j, state in enumerate(controller.states.values()):
+				print state
 				d = edit_distance(query, state.name)
+				print '{} : {}'.format(state.name, d)
 				if d <= min_edit_distance or min_edit_distance == -1:
 					min_edit_distance = d
 					controller_min = i
 					state_min = j
-		if (controller_min==1 and state_min==1):
+					name_min = state.name
+		if (name_min == 'update hologram'):
 			self.controllers[1].hologramQuery=query
-		print(self.controllers[controller_min])
 		self.changeState(controller_min,state_min)
 
 	def run(self):
