@@ -157,3 +157,17 @@ class PetFeederController(StatePredictor):
 	@staticmethod
 	def feed(x):
 		pass
+
+class HologramController(StatePredictor):
+	def __init__(self,hologramQuery,update_interval=1):
+		states = {
+		0:State('do nothing',0),
+		1:State('update hologram',1)
+		}
+		sensors=[]
+		super(HologramController, self).__init__(states, sensors, update_interval=update_interval)
+		states[0].addSubscriber(HologramController.updateHologram)
+	
+	@staticmethod
+	def updateHologram(x):
+

@@ -22,6 +22,8 @@ class MainController(threading.Thread):
 
 	def __init__(self, controllers = [], update_interval=10):
 		self.update_interval = update_interval
+		self.manager=multiprocessing.Manager()
+		self.manager.start()
 
 		'''Threading related stuff'''
 		super(MainController, self).__init__()
@@ -34,12 +36,6 @@ class MainController(threading.Thread):
 		self.controllers = controllers
 		self.running = True
 		self.kill=False
-
-
-
-
-
-
 		''' Establish connection with database'''
 		try:
 			self.conn = psycopg2.connect(
@@ -74,16 +70,14 @@ class MainController(threading.Thread):
 		response = self.cur.fetchall()
 		self.names = map(lambda x : x[0], response)
 		self.rooms_auth = self.manager.dict(zip(self.names, map(lambda x : x[1], response)))
-
-
 		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)
 
 		# Basic Controller Setup
 
 		self.controllers.append(AuthorizationController(minifig_detector=self.minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
-
-
-
+		self.hologramQuery=self.manager.Value(c_char_p,"")
+		self.controllers.append(HologramController(self.hologramQuery))
+		
 		self.start()
 
 
@@ -131,7 +125,9 @@ class MainController(threading.Thread):
 					min_edit_distance = d
 					controller_min = i
 					state_min = j
-		self.changeState(i,j)
+		if (controller_min==1 and state_min==1):
+			self.controllers[1].hologramQuery=query
+		self.changeState(controller_min,state_min)
 
 	def run(self):
 		# start all controllers as threads
