@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "501043801950",
+    "firebase_url": "https://celeste-54d66.firebaseio.com",
+    "project_id": "celeste-54d66",
+    "storage_bucket": "celeste-54d66.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:501043801950:android:f39f1f90545031ae",
+        "android_client_info": {
+          "package_name": "com.celeste.machinesriot.celeste"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "501043801950-p9m28o8mprpfh9fibjrv59vhqlqskm1r.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAn6gjuHaWf0MHNc1GzwMjyt11MuEJjeVY"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
