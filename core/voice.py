@@ -6,7 +6,7 @@ class VoiceRecognizer(multiprocessing.Process):
 		self.recognizer = sr.Recognizer()
 		self.q= q
 		self.homeName = homeName
-		self.config=self.q.get()[0]
+		self.config=self.q.get()
 		self._message = multiprocessing.Value(c_char_p, '')
 		self._running = multiprocessing.Value('b', True)
 		self.property_keys = ['name', 'color', 'music','gender','category']
@@ -41,6 +41,8 @@ class VoiceRecognizer(multiprocessing.Process):
 		return(self.message)
 					
 	def run(self):
+		while not self.q.empty():
+			self.q.get()
 		while True:
 			while self.running:
 				with sr.Microphone() as source:
@@ -48,9 +50,9 @@ class VoiceRecognizer(multiprocessing.Process):
 					audio1 = self.recognizer.listen(source)
 					try:
 						self.message = self.recognizer.recognize_google(audio1)
-						if ('Celeste' in message):
+						if ('Celeste' in self.message):
 							self.message = self.message.strip(self.homeName)
-							self.talk('You said {0}'.format(message))
+							self.talk('You said {0}'.format(self.message))
 							self.q.put(self.message)
 					except sr.UnknownValueError:
 						self.message = ''

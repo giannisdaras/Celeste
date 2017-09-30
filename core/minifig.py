@@ -97,11 +97,10 @@ class MinifigDetector(multiprocessing.Process):
 		self._number_of_people = multiprocessing.Value('i', 0)
 		self._running = multiprocessing.Value('b', True)
 		self.update_interval = update_interval
-		self._status = multiprocessing.Array('i', self.num_classes)
 		self.status = status
 		
 		
-		for lbl in self.class_labels:
+		for lbl in self._class_labels:
 			self.status[lbl] = 0
 			
 	@property
@@ -118,7 +117,7 @@ class MinifigDetector(multiprocessing.Process):
 		
 	def reset_status(self):
 		self.number_of_people = 0
-		for lbl in self.class_labels:
+		for lbl in self._class_labels:
 			self.status[lbl] = 0
 
 	def get_data(self, source_file, onehot=False, delimiter=' '):	
@@ -288,13 +287,13 @@ class MinifigDetector(multiprocessing.Process):
 		
 
 
-def initialize_from_directory(names, update_interval=10, source_dir='../haar', neural_data_filename = 'neural_data.txt', new_weights=False):
+def initialize_from_directory(names,status, camera_id, update_interval=10, source_dir='../haar', neural_data_filename = 'neural_data.txt', new_weights=False):
 	cwd = os.getcwd()
 	os.chdir(source_dir)
 	cascade = 'classifier/cascade.xml'
 	minifigs = [Minifig(x) for x in names]
-	minifig_detector = MinifigDetector(
-		minifigs, update_interval=update_interval, cascade_classifier=cascade)
+	minifig_detector = MinifigDetector(status=status, camera = Camera(index=camera_id),
+		minifigs=minifigs, update_interval=update_interval,  cascade_classifier=cascade)
 	try:
 		if not new_weights:	
 			minifig_detector.model.load_weights('weights.h5')

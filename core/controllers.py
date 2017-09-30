@@ -26,7 +26,7 @@ class AuthorizationController(StatePredictor):
 
 	def update(self):
 		
-		for lbl in self.minifig_detector.class_labels:
+		for lbl in self.minifig_detector._class_labels:
 			if self.minifig_detector.status[lbl] >= 1:
 				for r in self.rooms[lbl]:
 					self.rooms_auth_status[r] = True	
@@ -168,7 +168,7 @@ class EnergySaverController(StatePredictor):
         x = self.getData()
         self.timeon += sum(x)
         self.counter=self.counter+1
-        self.timeon=normalize(self.timeon, (l,r) = (0, 24))
+        self.timeon=normalize(self.timeon,l=0,r=24)
         index = self.predict_next(self.timeon)
 
         # use softmax

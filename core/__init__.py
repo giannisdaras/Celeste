@@ -53,7 +53,7 @@ def edit_distance(str1, str2, weight = lambda s1,s2, i, j: 0.75 if s1[i-1] == ' 
 	
 
 
-def normalize(x, (l,r)=(None,None)):
+def normalize(x, l=None,r=None):
 	x = x.astype('float64')
 	if l == None:
 		l = np.min(x)

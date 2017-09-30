@@ -67,8 +67,14 @@ class Camera(Sensor):
 	def __init__(self, name='cam', index=0):
 		self.cam = cv2.VideoCapture(index)
 		ret, frame = self.cam.read()
-		super(Camera, self).__init__(
-			name=name, output_ports=frame.shape[0] * frame.shape[1])
+		try:
+			super(Camera, self).__init__(
+				name=name, output_ports=frame.shape[0] * frame.shape[1])
+		except:
+			print("Exception here!")
+			super(Camera, self).__init__(
+				name=name, output_ports=640 * 480)
+			
 
 	def getData(self, grayscale=True):
 		ret, frame = self.cam.read()
