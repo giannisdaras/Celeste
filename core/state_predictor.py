@@ -51,7 +51,7 @@ class StatePredictor(multiprocessing.Process):
 			update_interval=1,
 			based_on_current_time=True,
 			based_on_previous_states=True,
-			queue=None):
+			queue= multiprocessing.Queue()):
 		"""Constructor class arguments:
 			states : a dictionary of states
 			sensors : a list of sensors
@@ -104,6 +104,7 @@ class StatePredictor(multiprocessing.Process):
 		self.model.compile(loss='categorical_crossentropy',
 						   optimizer=optimizer,
 						   metrics=['accuracy'])
+
 
 
 
@@ -169,9 +170,12 @@ class StatePredictor(multiprocessing.Process):
 		print 'Updating'
 
 		x = self.getData()
-		index = self.predict_next(x)
+		if not self.queue.empty():
+			index = self.queue.get()
+			print 'Changed on command'
+		else:	
+			index = self.predict_next(x)
 
-		# use softmax
 		self.state = self.states[index]
 		self.stateid = self.states[index].stateid
 		print 'New state: {0}'.format(self.states[index].name)
@@ -237,21 +241,3 @@ class StatePredictor(multiprocessing.Process):
 	@running.getter
 	def running(self):
 		return self._running.value == True
-
-
-# Testcase
-
-
-def test():
-	state_predictor = StatePredictor.DummyStatePredictor()
-	state_predictor.start()
-	time.sleep(5)
-	print 'Thread paused'
-	state_predictor.pause()
-	time.sleep(5)
-	print 'Thread continues'
-	state_predictor.resume()
-
-
-if __name__ == '__main__':
-	test()

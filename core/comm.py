@@ -8,24 +8,31 @@ class BoardNotFoundException(Exception):
 		super(BoardNotFoundException, self).__init__(msg)
 
 
-class Board(Arduino):
-	def __init__(self, num_tries=10):
-		for i in range(num_tries):
+class Board(threading.Thread):
+	def __init__(self):
+
+		num_tries = 10
+		x = 0
+		while x < num_tries:
 			try:
-				super(Board, self).__init__('/dev/ttyACM{0}'.format(i))
-				return
+				self.brd = Arduino('/dev/ttyACM{}'.format(x))
 			except:
-				continue
-		raise BoardNotFoundException()
-		self.it = util.Iterator(self)
+				x += 1
+				if x == num_tries:
+					raise BoardNotFoundException()
+		
+		self.board_queue = multiprocessing.Queue()
+		
+		self.components = {}
+		
+		self.components['servo1'] = Servo(9, board = self.brd)
+		self.components['servo2'] = Servo(10, board = self.brd)		
+		self.components['servo3'] = Servo(11, board = self.brd)
+		self.components['ledarray'] = LEDArray(input_pins = [13, 12])
+		self.components['photoresistor'] = ArduinoAnalogSensor(input_pins = [0], board = self.brd)
+	
 		
 		
-class BoardManager(BaseManager):
-		
-		def __init__(self):
-			super(BoardManager, self).__init__()
-			super(BoardManager, self).register('Board', Board)
-			super(BoardManager, self).start()
 	
 class Sensor(object):
 
@@ -49,18 +56,6 @@ class Servo(object):
 	def rotate(self, x):
 		self.pin.write(x)
 		self.pin.write(0)
-		
-class DummySensor(Sensor):
-	""" Sensor that outputs random data """
-
-	def __init__(self, name, output_ports, lower, upper):
-		super(DummySensor, self).__init__(name, output_ports)
-		self.lower, self.upper = lower, upper
-
-	def getData(self):
-		return np.array(self.output_ports *
-						[np.random.randint(self.lower, self.upper)])
-
 
 class Camera(Sensor):
 
@@ -86,19 +81,17 @@ class Camera(Sensor):
 		self.cam.release()
 
 class ArduinoDigitalSensor(Sensor):
-	pins=[]
-	def __init__(self, name, board, input_pins=[]):
+	def __init__(self, board, input_pins=[]):
 		super(ArduinoDigitalSensor, self).__init__(name, output_ports=len(input_pins))
 		self.board = board
+		self.pins = []
 		self.input_pins = input_pins
 		for p in input_pins:
 			self.pins.append(self.board.get_pin('d:%d:i' % p))
 			#self.board.set_pin_mode(p, board.INPUT, board.DIGITAL)
 
 
-	def getData(self):
-
-			 
+	def getData(self):			 
 		try:
 			x = np.array([])
 			for p in self.pins:
@@ -117,19 +110,21 @@ class ArduinoDigitalSensor(Sensor):
 
 
 class LEDArray(ArduinoDigitalSensor):
-	pins=[]
-	def __init__(self, name, board, input_pins=[]):
+
+	def __init__(self, board, input_pins=[]):
 		self.board=board
 		self.input_pins=input_pins
+		self.pins = []
 		for p in input_pins:
 			self.pins.append(board.get_pin('d:%d:o' %p))
 
 
 class ArduinoAnalogSensor(Sensor):
-	pins=[]
-	def __init__(self, name, board, input_pins=[]):
+
+	def __init__(self,  board, input_pins=[]):
 		self.board = board
 		self.input_pins = input_pins
+		self.pins = []
 		for p in input_pins:
 			self.pins.append(self.board.get_pin('a:%d:i' % p))
 	

@@ -17,7 +17,6 @@ class AuthorizationController(StatePredictor):
 			self.rooms_auth_status[r] = False
 		
 		states = {
-			0 : State('do nothing', 0),
 			1 : State('open door', 1),
 			2 : State('close door', 2)	
 		}
@@ -139,52 +138,55 @@ class HologramController(StatePredictor):
 	
 	@staticmethod
 	def updateHologram(x):
-		pass
+		print 'HOLOLO'
 
 
 class EnergySaverController(StatePredictor):
-    def __init__(self):
-        states = {
-            0 : State('do nothing',0),
-            1 : State('show message',1)
-        }
-        self.timeon=0
-        self.counter=0
-        states[1].addSubscriber(EnergySaverController.showmessage)
-        sensors = [ledarray]
-        super(EnergySaverController, self).__init__(states, sensors,update_interval=1)
+	def __init__(self, update_interval):
+		states = {
+			0 : State('do nothing',0),
+			1 : State('show message',1)
+		}
+		self.timeon=0
+		self.counter=0
+		states[1].addSubscriber(EnergySaverController.showmessage)
+		sensors = [ledarray]
+		super(EnergySaverController, self).__init__(states, sensors,update_interval=update_interval)
 
-    def getData(self):
-        x = np.array([])
-        for sensor in self.sensors:
-            d = sensor.getData()
-            x = np.append(x, d)
-        return x 
-        
-    def update(self):
-        """ Update NN """
+	def getData(self):
+		x = np.array([])
+		for sensor in self.sensors:
+			d = sensor.getData()
+			x = np.append(x, d)
+		return x 
+		
+	def update(self):
+		""" Update NN """
 
-        print 'Updating'
+		print 'Updating'
 
-        x = self.getData()
-        self.timeon += sum(x)
-        self.counter=self.counter+1
-        self.timeon=normalize(self.timeon,l=0,r=24)
-        index = self.predict_next(self.timeon)
+		x = self.getData()
+		self.timeon += sum(x)
+		self.counter=self.counter+1
+		self.timeon=normalize(self.timeon,l=0,r=24)
+		if not self.queue.empty():
+			index = self.queue.get()
+		else:
+			index = self.predict_next(self.timeon)
 
-        # use softmax
-        self.state = self.states[index]
-        print ('New state: {0}'.format(self.states[index].name))
+		# use softmax
+		self.state = self.states[index]
+		print ('New state: {0}'.format(self.states[index].name))
 
-        # Retrain our model
-        if self.counter == 15:
-            self.counter =0
-            print 'Retraining'
-            y = keras.utils.to_categorical(index, self.num_classes)
-            self.model.train_on_batch(np.array([self.timeon]), y)
-            self.num_train += 1
+		# Retrain our model
+		if self.counter == 15:
+			self.counter =0
+			print 'Retraining'
+			y = keras.utils.to_categorical(index, self.num_classes)
+			self.model.train_on_batch(np.array([self.timeon]), y)
+			self.num_train += 1
 
-        self.state.onActivation(self)
-    def showmessage(self):
-        print 'Daily usage exceeded'		
+		self.state.onActivation(self)
+	def showmessage(self):
+		print 'Daily usage exceeded'		
 
