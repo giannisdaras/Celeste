@@ -30,6 +30,7 @@ class State:
 
 
 class StatePredictor(multiprocessing.Process):
+	
 	"""
 		State Predictor Class. This class works like an NFA whose (predicted) next state is
 		based on the previous state (like an RNN), current time data and sensor inputs. The input is fed to
@@ -138,7 +139,7 @@ class StatePredictor(multiprocessing.Process):
 	def __repr__(self):
 		self.model.summary()
 
-	def predict_next(self, x, verbose=True):
+	def predict_next(self, x, verbose=False):
 		""" Predct next state index = argmax (y_prob) """
 		x = normalize(x)
 		y_prob = self.model.predict(np.array([x]))
@@ -203,6 +204,7 @@ class StatePredictor(multiprocessing.Process):
 
 	def resume(self):
 		self.running = True
+
 
 	@property
 	def idle(self):

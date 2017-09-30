@@ -133,8 +133,8 @@ class HologramController(StatePredictor):
 		1:State('update hologram',1)
 		}
 		sensors=[]
-		super(HologramController, self).__init__(states, sensors, update_interval=update_interval)
 		states[0].addSubscriber(HologramController.updateHologram)
+		super(HologramController, self).__init__(states = states, sensors = [], update_interval=update_interval)
 	
 	@staticmethod
 	def updateHologram(x):
