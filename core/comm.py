@@ -28,6 +28,7 @@ class Board(threading.Thread):
 		self.components['servo3'] = Servo(11, board = self.brd)
 		self.components['ledarray'] = LEDArray(input_pins = [13, 12])
 		self.components['photoresistor'] = ArduinoAnalogSensor(input_pins = [0], board = self.brd)
+
 		self.start()
 	def run(self):
 		while True:
