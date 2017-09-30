@@ -20,7 +20,8 @@ class MainController(threading.Thread):
 	''' This class holds main controller that is responsible for synchronizing the
 	rest of the controllers. Due to GIL it is obliged to be a threading.Thread '''
 
-	def __init__(self, controllers = [], update_interval=10):
+	def __init__(self,brd,controllers = [], update_interval=1,):
+		self.brd=brd
 		self.update_interval = update_interval
 		self.manager=multiprocessing.Manager()
 		self.entrance_status=self.manager.dict()
@@ -30,8 +31,8 @@ class MainController(threading.Thread):
 
 		'''Threading related stuff'''
 		super(MainController, self).__init__()
-		self.board = Board()
-		
+		self.board = Board(self.brd)
+		self.board.start()
 			
 		self.lock = self.manager.Lock()
 		self.controllers = controllers
@@ -170,4 +171,9 @@ class MainController(threading.Thread):
 		self.running = True
 
 if __name__ == '__main__':
-	mainController=MainController()
+	while True:
+			try:
+				brd = Arduino('/dev/ttyACM{}'.format(x))
+			except:
+				print('Not now')
+	mainController=MainController(brd)
