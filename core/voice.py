@@ -50,10 +50,6 @@ class VoiceRecognizer(multiprocessing.Process):
 					audio1 = self.recognizer.listen(source)
 					try:
 						self.message = self.recognizer.recognize_google(audio1)
-<<<<<<< HEAD
-=======
-						print(self.message)
->>>>>>> b67a1be5b55a2665be9158346b03ba7d5d13b776
 						if ('Celeste' in self.message):
 							self.message = self.message.strip(self.homeName)
 							self.talk('You said {0}'.format(self.message))
