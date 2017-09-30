@@ -84,11 +84,8 @@ class MainController(threading.Thread):
 
 		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
 		self.hologramQuery=self.manager.Value(c_char_p,"")
-<<<<<<< HEAD
-		self.controllers.append(HologramController(self.hologramQuery))
-=======
+
 		self.controllers.append(HologramController(self.hologramQuery, update_interval=self.update_interval))
->>>>>>> b67a1be5b55a2665be9158346b03ba7d5d13b776
 		
 		self.start()
 
@@ -173,4 +170,3 @@ class MainController(threading.Thread):
 
 if __name__ == '__main__':
 	mainController=MainController()
-	mainController.start()
