@@ -21,6 +21,9 @@ class MainController(threading.Thread):
 	rest of the controllers. Due to GIL it is obliged to be a threading.Thread '''
 
 	def __init__(self, controllers = [], update_interval=10):
+		global brd
+		self.board = Board(brd)
+		self.board.start()
 		self.update_interval = update_interval
 		self.manager=multiprocessing.Manager()
 		self.entrance_status=self.manager.dict()
@@ -170,4 +173,17 @@ class MainController(threading.Thread):
 		self.running = True
 
 if __name__ == '__main__':
-	mainController=MainController()
+	
+	num_tries = 10
+	x = 0
+	global brd
+	while x < num_tries:
+		try:
+			brd = Arduino('/dev/ttyACM{}'.format(x))
+			it = util.Iterator(brd)
+			it.start()
+		except:
+			x += 1
+			print 'fdsafs'
+						
+	mainController=MainController(brd)

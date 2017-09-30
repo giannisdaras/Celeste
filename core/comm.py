@@ -9,27 +9,19 @@ class BoardNotFoundException(Exception):
 
 
 class Board(threading.Thread):
-	def __init__(self):
-		num_tries = 10
-		x = 0
-		while x < num_tries:
-			try:
-				self.brd = Arduino('/dev/ttyACM{}'.format(x))
-			except:
-				x += 1
-				if x == num_tries:
-					raise BoardNotFoundException()
-		
+	def __init__(self, brd):
+		self.brd = brd
 		self.board_queue = multiprocessing.Queue()
 		
 		self.components = {}
-		self.components['servo1'] = Servo(9, board = self.brd)
-		self.components['servo2'] = Servo(10, board = self.brd)		
-		self.components['servo3'] = Servo(11, board = self.brd)
-		self.components['ledarray'] = LEDArray(input_pins = [13, 12])
+		self.components['servo1'] = Servo(servo_pin = 9, board = self.brd)
+		self.components['servo2'] = Servo(servo_pin = 10, board = self.brd)		
+		self.components['servo3'] = Servo(servo_pin = 11, board = self.brd)
+		self.components['ledarray'] = LEDArray(input_pins = [13, 12], board = self.brd)
 		self.components['photoresistor'] = ArduinoAnalogSensor(input_pins = [0], board = self.brd)
 
-		self.start()
+		super(Board, self).__init__()
+
 	def run(self):
 		while True:
 			if (not self.board_queue.empty()):
@@ -40,7 +32,7 @@ class Board(threading.Thread):
 					self.components['servo2'].rotate(instruction[1])
 				elif ('servo3' in instruction):
 					self.components['servo3'].rotate(instruction[1])
-				else: ('ledarray' in instruction):
+				elif ('ledarray' in instruction):
 					for it in instruction:
 						self.components['ledarray'].writeData(it)
 	
