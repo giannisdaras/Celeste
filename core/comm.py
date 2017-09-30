@@ -10,7 +10,6 @@ class BoardNotFoundException(Exception):
 
 class Board(threading.Thread):
 	def __init__(self):
-
 		num_tries = 10
 		x = 0
 		while x < num_tries:
@@ -24,15 +23,25 @@ class Board(threading.Thread):
 		self.board_queue = multiprocessing.Queue()
 		
 		self.components = {}
-		
 		self.components['servo1'] = Servo(9, board = self.brd)
 		self.components['servo2'] = Servo(10, board = self.brd)		
 		self.components['servo3'] = Servo(11, board = self.brd)
 		self.components['ledarray'] = LEDArray(input_pins = [13, 12])
 		self.components['photoresistor'] = ArduinoAnalogSensor(input_pins = [0], board = self.brd)
-	
-		
-		
+		self.start()
+	def run(self):
+		while True:
+			if (not self.board_queue.empty()):
+				instruction=self.board_queue.get()
+				if ('servo1' in instruction):
+					self.components['servo1'].rotate(instruction[1])
+				elif ('servo2' in instruction):
+					self.components['servo2'].rotate(instruction[1])
+				elif ('servo3' in instruction):
+					self.components['servo3'].rotate(instruction[1])
+				else: ('ledarray' in instruction):
+					for it in instruction:
+						self.components['ledarray'].writeData(it)
 	
 class Sensor(object):
 
