@@ -32,23 +32,21 @@ class AuthorizationController(StatePredictor):
 		
 		for r in self.rooms:
 			if self.rooms_auth_status[r] == True:
-				AuthorizationController.open_door(r)
+				self.open_door(r)
 			else:
-				AuthorizationController.close_door(r)
+				self.close_door(r)
 		
 		self.reset_auth()
 			
 	def reset_auth(self):
 		for r in self.rooms:
 			self.rooms_auth_status[r] = False	
-		
-	@staticmethod		
-	def open_door(x):
-		pass
+			
+	def open_door(self, x):
+		self.board_queue.put(['servo{}'.format(x), 90])
 	
-	@staticmethod	
-	def close_door(x):
-		pass
+	def close_door(self, x):
+		self.board_queue.put(['servo{}'.format(x), 90])
 		
 class EntranceController(StatePredictor):
 	
@@ -60,22 +58,29 @@ class EntranceController(StatePredictor):
 			1 : State('open entrance', 1),
 			2 : State('close entrance', 2)
 		}
-		states[1].addSubscriber(AuthorizationController.open_door)
-		states[2].addSubscriber(AuthorizationController.close_door)
+		states[1].addSubscriber(self.open_door)
+		states[2].addSubscriber(self.close_door)
 		super(EntranceController, self).__init__(states=states, sensors = [], update_interval = update_interval)
 		
 	def update(self):
 		
 		if self.minifig_detector.number_of_people > 0:
-			AuthorizationController.open_door(self.entrance_id)
+			self.open_door(self.entrance_id)
 			time.sleep(update_interval)
-			AuthorizationController.close_door(self.entrance_id)
+			self.close_door(self.entrance_id)
+	
+	def open_door(self):
+		self.board_queue.put(['servo{}'.format(self.entrance_id), 90])
+		
+	def close_door(self):
+		self.board_queue.put(['servo{}'.format(self.entrance_id), 0])		
 		
 class PartyModeController(StatePredictor):
 	
-	def __init__(self, minifig_detector, music_preferences, number_of_people_threshold = 4, update_interval = 10):
+	def __init__(self, minifig_detector, music_preferences, sweep_servo_id = 4, number_of_people_threshold = 4, update_interval = 10):
 		self.minifig_detector = minifig_detector
 		self.music_preferences = music_preferences
+		self.sweep_servo_id = sweep_servo_id
 		self.number_of_people_threshold = number_of_people_threshold
 		states = {
 			0 : State('do nothing', 0),
@@ -113,7 +118,7 @@ class PartyModeController(StatePredictor):
 			self.party_rock()
 			
 	def party_rock(self):
-		
+		sweep_times = 12
 		for lbl in self.minifig_detector.class_labels:
 			if self.minifig_detector.status[lbl] >= 1:
 				self.tracks[self.music_queries[lbl]] += 1
@@ -121,9 +126,16 @@ class PartyModeController(StatePredictor):
 		t = max(zip(self.tracks.keys(), self.tracks.values()), key = lambda x : x[1])[0]		
 		result_url = t['preview_url']			
 		webbrowser.open_new(result_url)	
+		
+		for i in range(sweep_times):
+			self.sweep(self.sweep_servo_id)
 				
-
-
+	def sweep(self, x):
+		self.board_queue.put(['servo{}'.format(x), 180])
+		time.sleep(1)
+		self.board_queue.put(['servo{}'.format(x), 0])
+		time.sleep(1)			
+				
 
 class HologramController(StatePredictor):
 	def __init__(self,hologramQuery,update_interval=1):
@@ -132,17 +144,15 @@ class HologramController(StatePredictor):
 		1:State('update hologram',1)
 		}
 		sensors=[]
-		states[0].addSubscriber(HologramController.updateHologram)
+		states[0].addSubscriber(self.updateHologram)
 		super(HologramController, self).__init__(states = states, sensors = [], update_interval=update_interval)
 		
-	
-	@staticmethod
-	def updateHologram(x):
+	def updateHologram(self, x):
 		print 'HOLOLO'
 
 
 class EnergySaverController(StatePredictor):
-	def __init__(self, update_interval):
+	def __init__(self, update_interval, board):
 		states = {
 			0 : State('do nothing',0),
 			1 : State('show message',1)
@@ -151,7 +161,7 @@ class EnergySaverController(StatePredictor):
 		self.counter=0
 		states[1].addSubscriber(EnergySaverController.showmessage)
 		sensors = [ledarray]
-		super(EnergySaverController, self).__init__(states, sensors,update_interval=update_interval)
+		super(EnergySaverController, self).__init__(states = states, sensors = sensors, update_interval=update_interval)
 
 	def getData(self):
 		x = np.array([])
@@ -186,7 +196,10 @@ class EnergySaverController(StatePredictor):
 			self.model.train_on_batch(np.array([self.timeon]), y)
 			self.num_train += 1
 
-		self.state.onActivation(self)
+		self.state.onActivation(None)
+		
 	def showmessage(self):
-		print 'Daily usage exceeded'		
+		print 'Daily usage exceeded'	
+		self.board_queue.put(['ledarray'], [12, 13])
+			
 

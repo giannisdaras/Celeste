@@ -80,16 +80,12 @@ class MainController(threading.Thread):
 
 		# Basic Controller Setup
 
-		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
+		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval, board_queue = self.board.board_queue))
 		self.hologramQuery=self.manager.Value(c_char_p,"")
 		self.controllers.append(HologramController(self.hologramQuery, update_interval=self.update_interval))
-		
-		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, update_interval = self.update_interval))
-		
-		
-		self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval))
-		
-		self.controllers.append(EnergySaverController(update_interval = update_interval))
+		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, update_interval = self.update_interval, board_queue = self.board.board_queue))
+		self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval, board_queue = self.board.board_queue))
+		self.controllers.append(EnergySaverController(update_interval = update_interval, board_queue = self.board.board_queue))
 		
 		self.start()
 
