@@ -22,6 +22,11 @@ class MainController(threading.Thread):
 
 	def __init__(self, controllers = [], update_interval=10):
 		self.update_interval = update_interval
+		self.manager=multiprocessing.Manager()
+		self.entrance_status=self.manager.dict()
+		self.hall_status=self.manager.dict()
+		self.room_status=self.manager.dict()
+
 
 		'''Threading related stuff'''
 		super(MainController, self).__init__()
@@ -34,12 +39,6 @@ class MainController(threading.Thread):
 		self.controllers = controllers
 		self.running = True
 		self.kill=False
-
-
-
-
-
-
 		''' Establish connection with database'''
 		try:
 			self.conn = psycopg2.connect(
@@ -54,8 +53,6 @@ class MainController(threading.Thread):
 		self.config = int(self.cur.fetchall()[0][2])
 		self.q = multiprocessing.Queue()
 		self.q.put(self.config)
-		self.names=next(os.walk('./haar/positive_images'))[1]
-		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, update_interval=update_interval, source_dir='./haar', new_weights=False)
 		if (self.config):
 			for i in range(len(self.names)):
 				query="insert into people (id,name,gender) values ({},'{}','male')".format(i,self.names[i])
@@ -74,16 +71,21 @@ class MainController(threading.Thread):
 		response = self.cur.fetchall()
 		self.names = map(lambda x : x[0], response)
 		self.rooms_auth = self.manager.dict(zip(self.names, map(lambda x : x[1], response)))
+
 		self.music_preferences = self.manager.dict(zip(self.names, map(lambda x : x[2], response)))
 
-		self.minifig_detector = core.minifig.initialize_from_directory(names=self.names, status=self.manager.dict(), update_interval=update_interval, source_dir='./haar', new_weights=False)
+		self.names=next(os.walk('./haar/positive_images'))[1]
+		self.entrance_minifig_detector = core.minifig.initialize_from_directory(names=self.names,status=self.entrance_status,camera_id = 1, update_interval=update_interval, source_dir='./haar', new_weights=False)
+		self.hall_minifig_detector = core.minifig.initialize_from_directory(names=self.names,status=self.hall_status, camera_id = 2, update_interval=update_interval, source_dir='./haar', new_weights=False)
+		self.room_minifig_detector = core.minifig.initialize_from_directory(names=self.names,status=self.room_status, camera_id = 3, update_interval=update_interval, source_dir='./haar', new_weights=False)
+
 
 		# Basic Controller Setup
 
-		self.controllers.append(AuthorizationController(minifig_detector=self.minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
-
-
-
+		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval))
+		self.hologramQuery=self.manager.Value(c_char_p,"")
+		self.controllers.append(HologramController(self.hologramQuery))
+		
 		self.start()
 
 
@@ -132,24 +134,25 @@ class MainController(threading.Thread):
 					min_edit_distance = d
 					controller_min = i
 					state_min = j
-		self.changeState(i,j)
+		if (controller_min==1 and state_min==1):
+			self.controllers[1].hologramQuery=query
+		print(self.controllers[controller_min])
+		self.changeState(controller_min,state_min)
 
 	def run(self):
 		# start all controllers as threads
 		for controller in self.controllers:
 			controller.start()
 
-		self.minifig_detector.start()
+		self.entrance_minifig_detector.start()
 
 		# main thread body
 		while True:
 			while self.running:
-				while not self.q.empty():
-					try:
-						query = self.q.get()
-						self.classify_command(query)
-					except:
-						break
+				print self.voice.message
+				if self.q.empty():
+					query = self.q.get()
+					self.classify_command(query)
 
 			if self.kill:
 				return
@@ -161,7 +164,5 @@ class MainController(threading.Thread):
 		self.running = True
 
 if __name__ == '__main__':
-	main_controller = MainController(
-		[DummyController(update_interval=2)])
-	# time.sleep(3)
-	# main_controller.shutDown()
+	mainController=MainController()
+	mainController.start()

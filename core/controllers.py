@@ -26,7 +26,7 @@ class AuthorizationController(StatePredictor):
 
 	def update(self):
 		
-		for lbl in self.minifig_detector.class_labels:
+		for lbl in self.minifig_detector._class_labels:
 			if self.minifig_detector.status[lbl] >= 1:
 				for r in self.rooms[lbl]:
 					self.rooms_auth_status[r] = True	
@@ -57,8 +57,8 @@ class EntranceController(StatePredictor):
 		self.minifig_detector = minifig_detector
 		self.entrance_id = entrance_id
 		states = {
-			0 : State('do nothing', 0)
-			1 : State('open entrance', 1)
+			0 : State('do nothing', 0),
+			1 : State('open entrance', 1),
 			2 : State('close entrance', 2)
 		}
 		states[1].addSubscriber(AuthorizationController.open_door)
@@ -79,7 +79,7 @@ class PartyModeController(StatePredictor):
 		self.music_preferences = music_preferences
 		self.number_of_people_threshold = number_of_people_threshold
 		states = {
-			0 : State('do nothing', 0)
+			0 : State('do nothing', 0),
 			1 : State('lets party', 1)
 		}
 		states[1].addSubscriber(self.party_rock())
@@ -123,8 +123,25 @@ class PartyModeController(StatePredictor):
 		result_url = t['preview_url']			
 		webbrowser.open_new(result_url)	
 				
-class EnergySaverController(StatePredictor):
 
+
+
+class HologramController(StatePredictor):
+	def __init__(self,hologramQuery,update_interval=1):
+		states = {
+		0:State('do nothing',0),
+		1:State('update hologram',1)
+		}
+		sensors=[]
+		super(HologramController, self).__init__(states, sensors, update_interval=update_interval)
+		states[0].addSubscriber(HologramController.updateHologram)
+	
+	@staticmethod
+	def updateHologram(x):
+		pass
+
+
+class EnergySaverController(StatePredictor):
     def __init__(self):
         states = {
             0 : State('do nothing',0),
@@ -151,7 +168,7 @@ class EnergySaverController(StatePredictor):
         x = self.getData()
         self.timeon += sum(x)
         self.counter=self.counter+1
-        self.timeon=normalize(self.timeon, (l,r) = (0, 24))
+        self.timeon=normalize(self.timeon,l=0,r=24)
         index = self.predict_next(self.timeon)
 
         # use softmax
@@ -167,7 +184,6 @@ class EnergySaverController(StatePredictor):
             self.num_train += 1
 
         self.state.onActivation(self)
-
-
     def showmessage(self):
         print 'Daily usage exceeded'		
+
