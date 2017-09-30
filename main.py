@@ -30,11 +30,9 @@ class MainController(threading.Thread):
 
 		'''Threading related stuff'''
 		super(MainController, self).__init__()
-		try:
-			self.board_manager = BoardManager()
-			self.board = board_manager.Board()
-		except:
-			pass
+		self.board = Board()
+		
+			
 		self.lock = self.manager.Lock()
 		self.controllers = controllers
 		self.running = True
@@ -87,19 +85,25 @@ class MainController(threading.Thread):
 
 		self.controllers.append(HologramController(self.hologramQuery, update_interval=self.update_interval))
 		
+		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, update_interval = self.update_interval))
+		
+		
+		self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval))
+		
+		self.controllers.append(EnergySaverController(update_interval = update_interval))
+		
 		self.start()
 
 
-	def changeState(self, i, k, wait_interval=0.5):
-		self.controllers[i].stateid = k
-		#self.controllers[i].state = self.controllers[i].states[k]
-		self.controllers[i].state.onActivation(self.controllers[i].getData())
+	def changeState(self, i, k, wait_interval=1):
+		self.controllers[i].queue.put(k)
+		
 		time.sleep(wait_interval)
 		y = keras.utils.to_categorical(k, self.controllers[i].num_classes)
 
 		n = int(LEARNING_RATE * self.controllers[i].num_train)
 		x = self.controllers[i].getData()
-		if data != []:
+		if x != []:
 			for i in range(n):
 				self.controllers[i].model.train_on_batch(np.array([x]), y)
 			self.controllers[i].num_train += n
@@ -141,7 +145,8 @@ class MainController(threading.Thread):
 					state_min = j
 					name_min = state.name
 		if (name_min == 'update hologram'):
-			self.controllers[1].hologramQuery=query
+			self.controllers[1].hologramQuery=query.strip('update').strip('hologram')
+
 		self.changeState(controller_min,state_min)
 
 	def run(self):
