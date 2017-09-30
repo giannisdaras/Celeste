@@ -56,13 +56,7 @@ public class HologramProjector extends AppCompatActivity {
                 videoView.setMediaController(mp);
 //                videoView.requestFocus();
                 videoView.start();
-                videoView.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        Toast.makeText(getApplicationContext(),"Finished", Toast.LENGTH_SHORT).show();
-                        videoView.stopPlayback();
-                    }
-                });
+                
 
             }
 

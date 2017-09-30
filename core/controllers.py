@@ -57,8 +57,8 @@ class EntranceController(StatePredictor):
 		self.minifig_detector = minifig_detector
 		self.entrance_id = entrance_id
 		states = {
-			0 : State('do nothing', 0)
-			1 : State('open entrance', 1)
+			0 : State('do nothing', 0),
+			1 : State('open entrance', 1),
 			2 : State('close entrance', 2)
 		}
 		states[1].addSubscriber(AuthorizationController.open_door)
@@ -79,7 +79,7 @@ class PartyModeController(StatePredictor):
 		self.music_preferences = music_preferences
 		self.number_of_people_threshold = number_of_people_threshold
 		states = {
-			0 : State('do nothing', 0)
+			0 : State('do nothing', 0),
 			1 : State('lets party', 1)
 		}
 		states[1].addSubscriber(self.party_rock())
@@ -246,4 +246,5 @@ class HologramController(StatePredictor):
 	
 	@staticmethod
 	def updateHologram(x):
+		pass
 

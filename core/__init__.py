@@ -28,6 +28,7 @@ import spotipy.util as util
 from os import system as cmd
 import urllib
 import webbrowser
+from multiprocessing.managers import BaseManager
 
 def edit_distance(str1, str2, weight = lambda s1,s2, i, j: 0.75 if s1[i-1] == ' ' or s2[j-1] == ' ' else 1):
 		m, n = len(str1), len(str2)

@@ -23,7 +23,6 @@ class MainController(threading.Thread):
 	def __init__(self, controllers = [], update_interval=10):
 		self.update_interval = update_interval
 		self.manager=multiprocessing.Manager()
-		self.manager.start()
 
 		'''Threading related stuff'''
 		super(MainController, self).__init__()

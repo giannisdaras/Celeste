@@ -20,7 +20,7 @@ class Board(Arduino):
 		self.it = util.Iterator(self)
 		
 		
-class BoardManager(multiprocessing.managers.Manager):
+class BoardManager(BaseManager):
 		
 		def __init__(self):
 			super(BoardManager, self).__init__()
