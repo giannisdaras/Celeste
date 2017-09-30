@@ -15,13 +15,19 @@ import cv2
 import unittest
 import speech_recognition as sr
 import threading
-from PyMata.pymata import PyMata
+from pyfirmata import Arduino, util
 from ctypes import c_char_p
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.pipeline import Pipeline
 from subprocess import call,Popen
+import sys
+import spotipy
+import spotipy.util as util
+from os import system as cmd
+import urllib
+import webbrowser
 
 def edit_distance(str1, str2, weight = lambda s1,s2, i, j: 0.75 if s1[i-1] == ' ' or s2[j-1] == ' ' else 1):
 		m, n = len(str1), len(str2)

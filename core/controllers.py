@@ -33,9 +33,9 @@ class AuthorizationController(StatePredictor):
 		
 		for r in self.rooms:
 			if self.rooms_auth_status[r] == True:
-				self.open_door(r)
+				AuthorizationController.open_door(r)
 			else:
-				self.close_door(r)
+				AuthorizationController.close_door(r)
 		
 		self.reset_auth()
 			
@@ -43,12 +43,86 @@ class AuthorizationController(StatePredictor):
 		for r in self.rooms:
 			self.rooms_auth_status[r] = False	
 		
-	def open_door(self, x):
+	@staticmethod		
+	def open_door(x):
+		pass
+	
+	@staticmethod	
+	def close_door(x):
 		pass
 		
-	def close_door(self, x):
-		pass
+class EntranceController(StatePredictor):
+	
+	def __init__(self, minifig_detector, update_interval=10):
+		self.minifig_detector = minifig_detector
+		self.entrance_id = entrance_id
+		states = {
+			0 : State('do nothing', 0)
+			1 : State('open entrance', 1)
+			2 : State('close entrance', 2)
+		}
+		states[1].addSubscriber(AuthorizationController.open_door)
+		states[2].addSubscriber(AuthorizationController.close_door)
+		super(EntranceController, self).__init__(states=states, sensors = [], update_interval = update_interval)
 		
+	def update(self):
+		
+		if self.minifig_detector.number_of_people > 0:
+			AuthorizationController.open_door(self.entrance_id)
+			time.sleep(update_interval)
+			AuthorizationController.close_door(self.entrance_id)
+		
+class PartyModeController(StatePredictor):
+	
+	def __init__(self, minifig_detector, music_preferences, number_of_people_threshold = 4, update_interval = 10):
+		self.minifig_detector = minifig_detector
+		self.music_preferences = music_preferences
+		self.number_of_people_threshold = number_of_people_threshold
+		states = {
+			0 : State('do nothing', 0)
+			1 : State('lets party', 1)
+		}
+		states[1].addSubscriber(self.party_rock())
+		super(PartyModeController, self).__init__(states=states, sensors= [], update_interval = update_interval)
+		cmd("export SPOTIPY_CLIENT_ID='db13c5c481574855b69a6209bdffc279'")
+		cmd("export SPOTIPY_CLIENT_SECRET='ee74200a30754633baff860d4c0546f9'")
+		cmd("export SPOTIPY_REDIRECT_URI='http://localhost:8888/callback'")
+		
+		scope = 'user-library-read'
+		username="Giannhs Daras"
+		try:
+			token = util.prompt_for_user_token(username, scope)
+		except:
+			raise Exception('Error on spotify connection')
+
+		assert(token)
+		self.spotipy = spotipy.Spotify(auth=token)
+			
+		self.music_queries = {}
+		self.tracks = {}
+		for lbl in self.music_preferences.keys():
+			self.music_queries[lbl] = []	
+			for track in self.music_preferences[lbl]:
+				results = self.spotipy.search( q=track, limit=1)
+				t = results['tracks']['items']
+				self.music_queries[lbl].append(t)
+				self.tracks[t] = 0
+			
+	def update(self):
+		
+		if self.minifig_detector.number_of_people >= self.number_of_people_threshold:
+			self.party_rock()
+			
+	def party_rock(self):
+		
+		for lbl in self.minifig_detector.class_labels:
+			if self.minifig_detector.status[lbl] >= 1:
+				self.tracks[self.music_queries[lbl]] += 1
+		
+		t = max(zip(self.tracks.keys(), self.tracks.values()), key = lambda x : x[1])[0]		
+		result_url = t['preview_url']			
+		webbrowser.open_new(result_url)	
+			
 class EnergySaverController(StatePredictor):
 	
 	def __init__(self, update_interval):		
@@ -60,9 +134,10 @@ class EnergySaverController(StatePredictor):
 			4 : 'decrease temperature',
 		}
 		sensors = []
+		states
 		super(EnergySaverController, self).__init__(states, sensors)
 		
-		
+	
 	
 # Controllers based on state predictors
 # Example controlller
@@ -110,6 +185,7 @@ class FridgeController(StatePredictor):
 		}
 		states[1].addSubscriber(FridgeController.increase_temperature)
 		states[2].addSubscriber(FridgeController.decrease_temperature)
+
 
 		sensors = []
 		super(FridgeController, self).__init__(states, sensors)
