@@ -126,7 +126,8 @@ class MainController(threading.Thread):
 		controller_min = -1
 		state_min = -1
 		min_edit_distance = -1
-		print 'Query is ' + query
+		name_min = ''
+		#print 'Query is ' + query
 
 		for i, controller in enumerate(self.controllers):
 			for j, state in enumerate(controller.states.values()):
@@ -137,10 +138,9 @@ class MainController(threading.Thread):
 					min_edit_distance = d
 					controller_min = i
 					state_min = j
-		if (controller_min==1 and state_min==1):
+					name_min = state.name
+		if (name_min == 'update hologram'):
 			self.controllers[1].hologramQuery=query
-		
-		
 		
 		self.changeState(controller_min,state_min)
 
