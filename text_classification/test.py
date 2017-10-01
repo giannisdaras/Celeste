@@ -4,6 +4,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
+from firebase import firebase
 
 f1=open('john.txt','r')
 f2=open('mary.txt','r')
@@ -17,4 +18,8 @@ f2.close()
 f3.close()
 text_clf = Pipeline([('vect', CountVectorizer()),('tfidf', TfidfTransformer()),('clf', MultinomialNB()),])
 text_clf.fit(temp,[0,1,2])
-print(text_clf.predict(['studying all time nerd geek']))
+firebase = firebase.FirebaseApplication('https://celeste-54d66.firebaseio.com/', None)
+peopleDict={0:'John','1':'Marios','2':'mary'}
+result=peopleDict[text_clf.predict(['beautiful, awesome, handsome'])[0]]
+firebase.put('/url',result,None)
+
