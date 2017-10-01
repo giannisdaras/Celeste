@@ -79,7 +79,7 @@ class MainController(threading.Thread):
 		minifigs = [core.minifig.Minifig(x) for x in self.names]
 		cascade_classifier = './haar/classifier/cascade.xml'
 		# self.entrance_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status = entrance_status, camera = 1, cascade_classifier = cascade_classifier)
-		self.hall_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status  = self.hall_status, camera = 1, cascade_classifier = cascade_classifier)
+		self.hall_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status  = self.hall_status, camera = 2, cascade_classifier = cascade_classifier)
 		# self.room_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status = room_minifig_detector, camera = 3, cascade_classifier = cascade_classifier)
 
 
