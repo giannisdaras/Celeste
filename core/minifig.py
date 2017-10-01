@@ -35,10 +35,10 @@ class MinifigDetector(multiprocessing.Process):
 		self.model.add(MaxPooling2D(pool_size=(2, 2)))
 		#self.model.add(Dropout(0.2))
 	
-	def __init__(self, minifigs, status, num_stages=3, camera=Camera(), grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml', suppress_classification = False):
+	def __init__(self, minifigs, status,camera, num_stages=3, grayscale=True, update_interval=10, size=(40, 40), cascade_classifier='classifier.xml', suppress_classification = False):
 		super(MinifigDetector, self).__init__()
 		self.model = Sequential()
-		self.camera = camera
+		self.camera = Camera(index = camera)
 		self.size = size
 		self.lego_face_classifier = cv2.CascadeClassifier(cascade_classifier)
 		self.grayscale = grayscale
@@ -144,7 +144,7 @@ class MinifigDetector(multiprocessing.Process):
 		x = x.reshape((len(y), self.size[1], self.size[0], 1 if self.grayscale else 3))
 		return x, y
 
-	def train_cnn(self, source_file, onehot=False, delimiter=' ', epochs=50, batch_size=128, generate_samples=False, generate_sample_per_image = 10):
+	def train_cnn(self, source_file, onehot=False, delimiter=' ', epochs=100, batch_size=128, generate_samples=False, generate_sample_per_image = 10):
 		x, y = self.get_data(source_file=source_file, onehot=onehot, delimiter=delimiter)
 		x_prime, y_prime = np.array([]), np.array([])
 		
@@ -173,37 +173,45 @@ class MinifigDetector(multiprocessing.Process):
 			tmp = cv2.cvtColor(tmp, cv2.COLOR_BGR2GRAY)
 		if tmp.shape[0] != self.size[1] or tmp.shape[1] != self.size[0]:
 			tmp = cv2.resize(tmp, self.size)
-		tmp = normalize(tmp.reshape((self.size[0], self.size[1], 1 if self.grayscale else 3)), (0,255))
+		tmp = tmp.reshape((self.size[0], self.size[1], 1 if self.grayscale else 3))
+		tmp //= 255
 		return tmp
 
 	def predict_face(self, x, verbose):
 		y = self.model.predict(np.array([x])).flatten()
 		if verbose:
 			for i in range(self.num_classes):
-				print 'Person: {0}, Probability: {1}'.format(self.class_labels[i], y[i])
+				print 'Person: {0}, Probability: {1}'.format(self._class_labels[i], y[i])
 
 		# Apply threshold in case probabilities are low
 		y = np.array(map(lambda x: x if x >= THRESHOLD else 0.0, y))
 		index = np.argmax(y)
 		if y[index] != 0.0:
 			self.number_of_people += 1
-			self.status[self.class_labels[index]] = 1
+			self.status[self._class_labels[index]] = 1
 		else:
 			pass
 			# TODO add new habitats (how? if NN has fixed output?)
 
-		return index, self.class_labels[index]
+		return index, self._class_labels[index]
 
 	def update(self, verbose=True):
 		self.reset_status()
 		img = self.camera.getData(grayscale=False)
-		lego_faces = self.lego_face_classifier.detectMultiScale(img)
+		lego_faces = self.lego_face_classifier.detectMultiScale(img,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(20,20),
+        maxSize=(60,60))
 		if verbose:
 			print 'Found {0} potential matches'.format(len(lego_faces))
+		self.number_of_people = len(lego_faces)
 
 		for (x, y, w, h) in lego_faces:
 			cropped = self.transform(img[y: y + h, x: x + w])
+			print cropped.shape
 			if not self.suppress_classification:
+				print 
 				self.predict_face(cropped, verbose=verbose)
 
 		if verbose:
@@ -286,7 +294,7 @@ def initialize_from_directory(names,status, camera_id, update_interval=10, sourc
 	os.chdir(source_dir)
 	cascade = 'classifier/cascade.xml'
 	minifigs = [Minifig(x) for x in names]
-	minifig_detector = MinifigDetector(status=status, camera = Camera(index=camera_id),
+	minifig_detector = MinifigDetector(status=status,camera=camera_id, grayscale=True,
 		minifigs=minifigs, update_interval=update_interval,  cascade_classifier=cascade)
 	try:
 		if not new_weights:	
@@ -303,7 +311,7 @@ def initialize_from_directory(names,status, camera_id, update_interval=10, sourc
 
 
 if __name__ == '__main__':
-	minifig_detector = initialize_from_directory(['josh', 'joe', 'jack'], 10, neural_data_filename='increased_neural_data.txt', new_weights=False)
+	minifig_detector = initialize_from_directory(names  =['John', 'Mario', 'Mary', 'Mike','Roberto'], camera_id = 1, update_interval = 5, status = {}, neural_data_filename='neural_data.txt', new_weights=False)
+	minifig_detector.start()
 	os.chdir('../haar/')
-	minifig_detector.evaluate(source_file = 'original_neural_data.txt')
 	

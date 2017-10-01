@@ -17,8 +17,8 @@ class AuthorizationController(StatePredictor):
 			self.rooms_auth_status[r] = False
 		
 		states = {
-			1 : State('open door', 1),
-			2 : State('close door', 2)	
+			0 : State('open door', 0),
+			1 : State('close door', 1)	
 		}
 		self.update_interval = update_interval
 		super(AuthorizationController, self).__init__(states=states, sensors=[], update_interval=update_interval, board_queue = board_queue)
@@ -77,7 +77,7 @@ class EntranceController(StatePredictor):
 		
 class PartyModeController(StatePredictor):
 	
-	def __init__(self, minifig_detector, music_preferences, board_queue = board_queue, sweep_servo_id = 4, number_of_people_threshold = 4, update_interval = 10):
+	def __init__(self, minifig_detector, music_preferences, board_queue, sweep_servo_id = 4, number_of_people_threshold = 4, update_interval = 2):
 		self.minifig_detector = minifig_detector
 		self.music_preferences = music_preferences
 		self.sweep_servo_id = sweep_servo_id
@@ -86,8 +86,7 @@ class PartyModeController(StatePredictor):
 			0 : State('do nothing', 0),
 			1 : State('lets party', 1)
 		}
-		states[1].addSubscriber(self.party_rock())
-		super(PartyModeController, self).__init__(states=states, sensors= [], update_interval = update_interval)
+		super(PartyModeController, self).__init__(states=states, sensors= [],board_queue=board_queue, update_interval = update_interval)
 		cmd("export SPOTIPY_CLIENT_ID='db13c5c481574855b69a6209bdffc279'")
 		cmd("export SPOTIPY_CLIENT_SECRET='ee74200a30754633baff860d4c0546f9'")
 		cmd("export SPOTIPY_REDIRECT_URI='http://localhost:8888/callback'")
@@ -101,41 +100,40 @@ class PartyModeController(StatePredictor):
 
 		assert(token)
 		self.spotipy = spotipy.Spotify(auth=token)
-			
-		self.music_queries = {}
-		self.tracks = {}
-		for lbl in self.music_preferences.keys():
-			self.music_queries[lbl] = []	
-			for track in self.music_preferences[lbl]:
-				results = self.spotipy.search( q=track, limit=1)
-				t = results['tracks']['items']
-				self.music_queries[lbl].append(t)
-				self.tracks[t] = 0
+		result=self.majority()
+		t=self.spotipy.search(q=result,limit=1)
+		for j,k in enumerate(t['tracks']['items']):
+			pass
+		self.track=k['preview_url']
+		print(self.track)
+		states[1].addSubscriber(self.party_rock())
 			
 	def update(self):
 		
 		if self.minifig_detector.number_of_people >= self.number_of_people_threshold:
 			self.party_rock()
 			
-	def party_rock(self):
-		sweep_times = 12
-		for lbl in self.minifig_detector.class_labels:
-			if self.minifig_detector.status[lbl] >= 1:
-				self.tracks[self.music_queries[lbl]] += 1
-		
-		t = max(zip(self.tracks.keys(), self.tracks.values()), key = lambda x : x[1])[0]		
-		result_url = t['preview_url']			
+	def party_rock(self):		
+		result_url = self.track			
 		webbrowser.open_new(result_url)	
 		
-		for i in range(sweep_times):
+		for i in range(self.sweep_times):
 			self.sweep(self.sweep_servo_id)
 				
 	def sweep(self, x):
 		self.board_queue.put(['servo{}'.format(x), 180])
 		time.sleep(1)
 		self.board_queue.put(['servo{}'.format(x), 0])
-		time.sleep(1)			
-				
+		time.sleep(1)
+	def majority(self):
+		help_dict={}
+		for it in self.music_preferences.values():
+			help_dict[it]=0
+		for it in self.music_preferences.values():
+			help_dict[it]+=1
+		t = max(zip(help_dict.keys(),help_dict.values()), key = lambda x : x[1])[0]
+		return t
+
 
 class HologramController(StatePredictor):
 	def __init__(self,hologramQuery, board_queue, update_interval=1):
@@ -150,10 +148,10 @@ class HologramController(StatePredictor):
 		super(HologramController, self).__init__(states = states, sensors = [], board_queue = board_queue, update_interval=update_interval)
 
 		#train follows
-		f1=open('../text_classification/john.txt','r')
-		f2=open('../text_classification/mary.txt','r')
-		f3=open('../text_classification/marios.txt','r')
-		f4=open('../text_classification/mike.txt','r')
+		f1=open('./text_classification/john.txt','r')
+		f2=open('./text_classification/mary.txt','r')
+		f3=open('./text_classification/marios.txt','r')
+		f4=open('./text_classification/mike.txt','r')
 		temp=[]
 		temp.append(''.join(f1.readlines()))
 		temp.append(''.join(f2.readlines()))
@@ -164,7 +162,7 @@ class HologramController(StatePredictor):
 		f3.close()
 		f4.close()
 		self.text_clf = Pipeline([('vect', CountVectorizer()),('tfidf', TfidfTransformer()),('clf', MultinomialNB()),])
-		self.text_clf.fit(temp,[0,1,2])
+		self.text_clf.fit(temp,[0,1,2,3])
 		super(HologramController, self).__init__(states = states, sensors = [], update_interval=update_interval)
 
 		

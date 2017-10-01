@@ -54,9 +54,10 @@ class MainController(threading.Thread):
 		self.config = int(self.cur.fetchall()[0][2])
 		self.q = multiprocessing.Queue()
 		self.q.put(self.config)
+		self.names=next(os.walk('./haar/positive_images'))[1]
 		if (self.config):
 			for i in range(len(self.names)):
-				query="insert into people (id,name,gender) values ({},'{}','male')".format(i,self.names[i])
+				query="insert into people (id,name) values ({},'{}')".format(i,self.names[i])
 				self.cur.execute(query)
 			self.conn.commit()
 		self.voice=VoiceRecognizer(self.q)
@@ -70,25 +71,25 @@ class MainController(threading.Thread):
 		# Create minifig detector
 		self.cur.execute('select name, rooms, music from people')
 		response = self.cur.fetchall()
-		self.names = map(lambda x : x[0], response)
 		self.rooms_auth = self.manager.dict(zip(self.names, map(lambda x : x[1], response)))
 
 		self.music_preferences = self.manager.dict(zip(self.names, map(lambda x : x[2], response)))
 
-		self.names=next(os.walk('./haar/positive_images'))[1]
-		self.entrance_minifig_detector = core.minifig.initialize_from_directory(names=self.names,status=self.entrance_status,camera_id = 1, update_interval=update_interval, source_dir='./haar', new_weights=False)
-		self.hall_minifig_detector = core.minifig.initialize_from_directory(names=self.names,status=self.hall_status, camera_id = 2, update_interval=update_interval, source_dir='./haar', new_weights=False)
-		self.room_minifig_detector = core.minifig.initialize_from_directory(names=self.names,status=self.room_status, camera_id = 3, update_interval=update_interval, source_dir='./haar', new_weights=False)
+		# Minifigs
+		minifigs = [core.minifig.Minifig(x) for x in self.names]
+		cascade_classifier = './haar/classifier/cascade.xml'
+		# self.entrance_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status = entrance_status, camera = 1, cascade_classifier = cascade_classifier)
+		self.hall_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status  = self.hall_status, camera = 1, cascade_classifier = cascade_classifier)
+		# self.room_minifig_detector = core.minifig.MinifigDetector(minifigs = minifigs, status = room_minifig_detector, camera = 3, cascade_classifier = cascade_classifier)
 
 
 		# Basic Controller Setup
 
-		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval, board_queue = self.board_queue))
+		# self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval, board_queue = self.board_queue))
 		self.hologramQuery=self.manager.Value(c_char_p,"")
-
-		self.controllers.append(HologramController(self.hologramQuery, update_interval=self.update_interval))
-		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, update_interval = self.update_interval, board_queue = self.board_queue))
-		self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval, board_queue = self.board_queue))
+		self.controllers.append(HologramController(self.hologramQuery, board_queue=self.board_queue,update_interval=self.update_interval))
+		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, board_queue = self.board_queue))
+		# self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval, board_queue = self.board_queue))
 		self.controllers.append(EnergySaverController(update_interval = update_interval, board_queue = self.board_queue))
 		
 		
@@ -153,7 +154,8 @@ class MainController(threading.Thread):
 		for controller in self.controllers:
 			controller.start()
 
-		self.entrance_minifig_detector.start()
+		# self.entrance_minifig_detector.start()
+		self.hall_minifig_detector.start()
 
 		# main thread body
 		while True:

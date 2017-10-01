@@ -16,6 +16,8 @@ class Board(threading.Thread):
 		
 		self.brd = Arduino(serial_ports[0])
 		print 'Board found at {0}'.format(serial_ports[0])
+		# self.it = util.Iterator(self.brd)
+		# self.it.start()
 		self.board_queue = board_queue
 		self.components = {}
 		self.components['servo1'] = Servo(servo_pin = 9, board = self.brd)
@@ -66,18 +68,17 @@ class Camera(Sensor):
 
 	def __init__(self, name='cam', index=0):
 		self.cam = cv2.VideoCapture(index)
+		time.sleep(5)
 		ret, frame = self.cam.read()
-		try:
-			super(Camera, self).__init__(
+		#print ret, frame.shape
+		super(Camera, self).__init__(
 				name=name, output_ports=frame.shape[0] * frame.shape[1])
-		except:
-			print("Exception here!")
-			super(Camera, self).__init__(
-				name=name, output_ports=640 * 480)
+
 			
 
 	def getData(self, grayscale=True):
 		ret, frame = self.cam.read()
+		print ret, frame
 		if grayscale:
 			frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		return frame
@@ -151,3 +152,4 @@ class ArduinoAnalogSensor(Sensor):
 			return True
 		except:
 			return False            
+
