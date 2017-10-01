@@ -87,10 +87,6 @@ class PartyModeController(StatePredictor):
 			1 : State('lets party', 1)
 		}
 		super(PartyModeController, self).__init__(states=states, sensors= [],board_queue=board_queue, update_interval = update_interval)
-		cmd("export SPOTIPY_CLIENT_ID='db13c5c481574855b69a6209bdffc279'")
-		cmd("export SPOTIPY_CLIENT_SECRET='ee74200a30754633baff860d4c0546f9'")
-		cmd("export SPOTIPY_REDIRECT_URI='http://localhost:8888/callback'")
-		
 		scope = 'user-library-read'
 		username="Giannhs Daras"
 		try:
