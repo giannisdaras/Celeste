@@ -21,5 +21,5 @@ text_clf.fit(temp,[0,1,2])
 firebase = firebase.FirebaseApplication('https://celeste-54d66.firebaseio.com/', None)
 peopleDict={0:'John','1':'Marios','2':'mary'}
 result=peopleDict[text_clf.predict(['beautiful, awesome, handsome'])[0]]
-firebase.put('/url',result,None)
+firebase.put('/url','current',result)
 

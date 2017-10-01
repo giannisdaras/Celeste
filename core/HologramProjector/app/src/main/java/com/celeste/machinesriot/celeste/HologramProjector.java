@@ -37,7 +37,7 @@ public class HologramProjector extends AppCompatActivity {
                 WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_hologram_projector);
         videoView = (VideoView)findViewById(R.id.videoView);
-        mDatabase = FirebaseDatabase.getInstance().getReference("url");
+        mDatabase = FirebaseDatabase.getInstance().getReference("url/current");
         mDatabase.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
