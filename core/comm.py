@@ -1,5 +1,5 @@
 from __init__ import *
-
+import glob
 
 class BoardNotFoundException(Exception):
 
@@ -9,16 +9,23 @@ class BoardNotFoundException(Exception):
 
 
 class Board(threading.Thread):
-	def __init__(self,brd):
-		self.brd=brd
-		self.board_queue = multiprocessing.Queue()
+	
+	def __init__(self, board_queue = multiprocessing.Queue()):
+		
+		serial_ports = glob.glob('/dev/ttyACM*')
+		
+		self.brd = Arduino(serial_ports[0])
+		print 'Board found at {0}'.format(serial_ports[0])
+		self.board_queue = board_queue
 		self.components = {}
-		self.components['servo1'] = Servo(9, board = self.brd)
-		self.components['servo2'] = Servo(10, board = self.brd)		
-		self.components['servo3'] = Servo(11, board = self.brd)
-		self.components['ledarray'] = LEDArray(input_pins = [13, 12])
+		self.components['servo1'] = Servo(servo_pin = 9, board = self.brd)
+		self.components['servo2'] = Servo(servo_pin = 10, board = self.brd)		
+		self.components['servo3'] = Servo(servo_pin = 11, board = self.brd)
+		self.components['ledarray'] = LEDArray(input_pins = [13, 12], board = self.brd)
 		self.components['photoresistor'] = ArduinoAnalogSensor(input_pins = [0], board = self.brd)
-		print('here1')
+
+		super(Board, self).__init__()
+
 	def run(self):
 		while True:
 			if (not self.board_queue.empty()):
@@ -29,9 +36,8 @@ class Board(threading.Thread):
 					self.components['servo2'].rotate(instruction[1])
 				elif ('servo3' in instruction):
 					self.components['servo3'].rotate(instruction[1])
-				else:
-					for it in instruction:
-						self.components['ledarray'].writeData(it)
+				elif ('ledarray' in instruction):
+						self.components['ledarray'].writeData(instruction[1])
 	
 class Sensor(object):
 

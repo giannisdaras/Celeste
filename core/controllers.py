@@ -3,7 +3,7 @@ from comm import *
 
 class AuthorizationController(StatePredictor):
 	
-	def __init__(self, minifig_detector, rooms_auth, update_interval = 10):
+	def __init__(self, minifig_detector, rooms_auth, board_queue, update_interval = 10):
 		self.minifig_detector = minifig_detector
 		self.rooms_auth = rooms_auth
 		
@@ -21,7 +21,7 @@ class AuthorizationController(StatePredictor):
 			2 : State('close door', 2)	
 		}
 		self.update_interval = update_interval
-		super(AuthorizationController, self).__init__(states=states, sensors=[], update_interval=update_interval)
+		super(AuthorizationController, self).__init__(states=states, sensors=[], update_interval=update_interval, board_queue = board_queue)
 
 	def update(self):
 		
@@ -50,7 +50,7 @@ class AuthorizationController(StatePredictor):
 		
 class EntranceController(StatePredictor):
 	
-	def __init__(self, minifig_detector, update_interval=10):
+	def __init__(self, minifig_detector, board_queue, update_interval=10):
 		self.minifig_detector = minifig_detector
 		self.entrance_id = entrance_id
 		states = {
@@ -60,7 +60,7 @@ class EntranceController(StatePredictor):
 		}
 		states[1].addSubscriber(self.open_door)
 		states[2].addSubscriber(self.close_door)
-		super(EntranceController, self).__init__(states=states, sensors = [], update_interval = update_interval)
+		super(EntranceController, self).__init__(states=states, sensors = [], board_queue = board_queue,  update_interval = update_interval)
 		
 	def update(self):
 		
@@ -77,7 +77,7 @@ class EntranceController(StatePredictor):
 		
 class PartyModeController(StatePredictor):
 	
-	def __init__(self, minifig_detector, music_preferences, sweep_servo_id = 4, number_of_people_threshold = 4, update_interval = 10):
+	def __init__(self, minifig_detector, music_preferences, board_queue = board_queue, sweep_servo_id = 4, number_of_people_threshold = 4, update_interval = 10):
 		self.minifig_detector = minifig_detector
 		self.music_preferences = music_preferences
 		self.sweep_servo_id = sweep_servo_id
@@ -138,7 +138,7 @@ class PartyModeController(StatePredictor):
 				
 
 class HologramController(StatePredictor):
-	def __init__(self,hologramQuery,update_interval=1):
+	def __init__(self,hologramQuery, board_queue, update_interval=1):
 		states = {
 		0:State('do nothing',0),
 		1:State('update hologram',1)
@@ -147,6 +147,8 @@ class HologramController(StatePredictor):
 		self.firebase = firebase.FirebaseApplication('https://celeste-54d66.firebaseio.com/', None)
 		self.peopleDict={0:'John',1:'Mary',2:'Marios',3:'Mike'}
 		states[0].addSubscriber(self.updateHologram)
+		super(HologramController, self).__init__(states = states, sensors = [], board_queue = board_queue, update_interval=update_interval)
+
 		#train follows
 		f1=open('../text_classification/john.txt','r')
 		f2=open('../text_classification/mary.txt','r')
