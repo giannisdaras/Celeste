@@ -145,19 +145,22 @@ class HologramController(StatePredictor):
 		}
 		sensors=[]
 		self.firebase = firebase.FirebaseApplication('https://celeste-54d66.firebaseio.com/', None)
-		self.peopleDict={0:'John','1':'Marios','2':'mary'}
+		self.peopleDict={0:'John',1:'Mary',2:'Marios',3:'Mike'}
 		states[0].addSubscriber(self.updateHologram)
 		#train follows
 		f1=open('../text_classification/john.txt','r')
 		f2=open('../text_classification/mary.txt','r')
 		f3=open('../text_classification/marios.txt','r')
+		f4=open('../text_classification/mike.txt','r')
 		temp=[]
 		temp.append(''.join(f1.readlines()))
 		temp.append(''.join(f2.readlines()))
 		temp.append(''.join(f3.readlines()))
+		temp.append(''.join(f4.readlines()))
 		f1.close()
 		f2.close()
 		f3.close()
+		f4.close()
 		self.text_clf = Pipeline([('vect', CountVectorizer()),('tfidf', TfidfTransformer()),('clf', MultinomialNB()),])
 		self.text_clf.fit(temp,[0,1,2])
 		super(HologramController, self).__init__(states = states, sensors = [], update_interval=update_interval)
