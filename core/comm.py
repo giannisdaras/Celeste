@@ -1,5 +1,5 @@
 from __init__ import *
-
+import glob
 
 class BoardNotFoundException(Exception):
 
@@ -9,10 +9,14 @@ class BoardNotFoundException(Exception):
 
 
 class Board(threading.Thread):
-	def __init__(self, brd):
-		self.brd = brd
-		self.board_queue = multiprocessing.Queue()
+	
+	def __init__(self, board_queue = multiprocessing.Queue()):
 		
+		serial_ports = glob.glob('/dev/ttyACM*')
+		
+		self.brd = Arduino(serial_ports[0])
+		print 'Board found at {0}'.format(serial_ports[0])
+		self.board_queue = board_queue
 		self.components = {}
 		self.components['servo1'] = Servo(servo_pin = 9, board = self.brd)
 		self.components['servo2'] = Servo(servo_pin = 10, board = self.brd)		
@@ -33,8 +37,7 @@ class Board(threading.Thread):
 				elif ('servo3' in instruction):
 					self.components['servo3'].rotate(instruction[1])
 				elif ('ledarray' in instruction):
-					for it in instruction:
-						self.components['ledarray'].writeData(it)
+						self.components['ledarray'].writeData(instruction[1])
 	
 class Sensor(object):
 

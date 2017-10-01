@@ -25,10 +25,6 @@ class Minifig:
 		except KeyError:
 			self.preferences[item] = [value]
 
-	@staticmethod
-	def majority_vote(minifigs, preference):
-		pass
-
 
 class MinifigDetector(multiprocessing.Process):
 	
@@ -49,9 +45,7 @@ class MinifigDetector(multiprocessing.Process):
 		self.num_classes = len(minifigs)
 		self.minifigs = minifigs
 		
-		self._class_labels = multiprocessing.Array(c_char_p, self.num_classes)
-		for i, x in enumerate(self.minifigs):
-			self._class_labels[i] = x.name 
+		self._class_labels = multiprocessing.Array(c_char_p, map(lambda x : x.name, self.minifigs))
 		
 		
 		self.model.add(Convolution2D(32, kernel_size=(

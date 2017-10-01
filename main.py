@@ -8,6 +8,7 @@ import threading
 import psycopg2
 import sys
 import core.minifig
+import glob
 try:
 	from core.comm import *
 except:
@@ -21,8 +22,9 @@ class MainController(threading.Thread):
 	rest of the controllers. Due to GIL it is obliged to be a threading.Thread '''
 
 	def __init__(self, controllers = [], update_interval=10):
-		global brd
-		self.board = Board(brd)
+		
+		self.board_queue = multiprocessing.Queue()
+		self.board = Board(self.board_queue)
 		self.board.start()
 		self.update_interval = update_interval
 		self.manager=multiprocessing.Manager()
@@ -33,8 +35,6 @@ class MainController(threading.Thread):
 
 		'''Threading related stuff'''
 		super(MainController, self).__init__()
-		self.board = Board()
-		
 			
 		self.lock = self.manager.Lock()
 		self.controllers = controllers
@@ -83,15 +83,15 @@ class MainController(threading.Thread):
 
 		# Basic Controller Setup
 
-		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval, board_queue = self.board.board_queue))
+		self.controllers.append(AuthorizationController(minifig_detector=self.hall_minifig_detector, rooms_auth=self.rooms_auth, update_interval=self.update_interval, board_queue = self.board_queue))
 		self.hologramQuery=self.manager.Value(c_char_p,"")
 
 		self.controllers.append(HologramController(self.hologramQuery, update_interval=self.update_interval))
-		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, update_interval = self.update_interval, board_queue = self.board.board_queue))
-		self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval, board_queue = self.board.board_queue))
-		self.controllers.append(EnergySaverController(update_interval = update_interval, board_queue = self.board.board_queue))
+		self.controllers.append(PartyModeController(minifig_detector = self.hall_minifig_detector, music_preferences=self.music_preferences, update_interval = self.update_interval, board_queue = self.board_queue))
+		self.controllers.append(EntranceController(minifig_detector = self.entrance_minifig_detector, update_interval = self.update_interval, board_queue = self.board_queue))
+		self.controllers.append(EnergySaverController(update_interval = update_interval, board_queue = self.board_queue))
 		
-		self.start()
+		
 
 
 	def changeState(self, i, k, wait_interval=1):
@@ -173,17 +173,5 @@ class MainController(threading.Thread):
 		self.running = True
 
 if __name__ == '__main__':
-	
-	num_tries = 10
-	x = 0
-	global brd
-	while x < num_tries:
-		try:
-			brd = Arduino('/dev/ttyACM{}'.format(x))
-			it = util.Iterator(brd)
-			it.start()
-		except:
-			x += 1
-			print 'fdsafs'
-						
-	mainController=MainController(brd)
+	main_controller = MainController()
+	main_controller.start()
