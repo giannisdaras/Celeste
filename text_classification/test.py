@@ -19,7 +19,8 @@ f3.close()
 text_clf = Pipeline([('vect', CountVectorizer()),('tfidf', TfidfTransformer()),('clf', MultinomialNB()),])
 text_clf.fit(temp,[0,1,2])
 firebase = firebase.FirebaseApplication('https://celeste-54d66.firebaseio.com/', None)
-peopleDict={0:'John','1':'Marios','2':'mary'}
-result=peopleDict[text_clf.predict(['beautiful, awesome, handsome'])[0]]
+peopleDict={0:'John',1:'Mary',2:'Marios'}
+result=peopleDict[text_clf.predict(['female'])[0]]
+print(result)
 firebase.put('/url','current',result)
 
