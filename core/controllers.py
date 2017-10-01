@@ -78,9 +78,11 @@ class EntranceController(StatePredictor):
 class PartyModeController(StatePredictor):
 	
 	def __init__(self, minifig_detector, music_preferences, board_queue, sweep_servo_id = 4, number_of_people_threshold = 4, update_interval = 2):
+		
 		self.minifig_detector = minifig_detector
 		self.music_preferences = music_preferences
 		self.sweep_servo_id = sweep_servo_id
+		self.sweep_times = 10
 		self.number_of_people_threshold = number_of_people_threshold
 		states = {
 			0 : State('do nothing', 0),
@@ -164,12 +166,13 @@ class HologramController(StatePredictor):
 		
 	def updateHologram(self, x):
 		result=self.peopleDict[self.text_clf.predict(self.hologramQuery)[0]]
+		print 'Bika ' + result + self.hologramQuery
 		self.firebase.put('/',{'url':result})
 
 
 
 class EnergySaverController(StatePredictor):
-	def __init__(self, update_interval, board):
+	def __init__(self, update_interval, board_queue, board = None):
 		states = {
 			0 : State('do nothing',0),
 			1 : State('show message',1)
@@ -177,8 +180,8 @@ class EnergySaverController(StatePredictor):
 		self.timeon=0
 		self.counter=0
 		states[1].addSubscriber(EnergySaverController.showmessage)
-		sensors = [ledarray]
-		super(EnergySaverController, self).__init__(states = states, sensors = sensors, update_interval=update_interval)
+		sensors = []
+		super(EnergySaverController, self).__init__(states = states, sensors = sensors, update_interval=update_interval, board_queue = board_queue)
 
 	def getData(self):
 		x = np.array([])

@@ -80,12 +80,12 @@ class MinifigDetector(multiprocessing.Process):
 			
 			
 		self.train_generator = self.datagen.flow_from_directory(
-        './positive_images',  # this is the target directory
-        target_size=self.size,  # all images will be resized to 150x150
-        batch_size=128,
-        class_mode='categorical',
-        classes=[str(i) for i in range(self.num_classes)]
-        )
+		'./positive_images',  # this is the target directory
+		target_size=self.size,  # all images will be resized to 150x150
+		batch_size=128,
+		class_mode='categorical',
+		classes=[str(i) for i in range(self.num_classes)]
+		)
 		
 		self.suppress_classification = suppress_classification
 		self._number_of_people = multiprocessing.Value('i', 0)
@@ -182,7 +182,7 @@ class MinifigDetector(multiprocessing.Process):
 		if verbose:
 			for i in range(self.num_classes):
 				print 'Person: {0}, Probability: {1}'.format(self._class_labels[i], y[i])
-
+				
 		# Apply threshold in case probabilities are low
 		y = np.array(map(lambda x: x if x >= THRESHOLD else 0.0, y))
 		index = np.argmax(y)
@@ -195,14 +195,14 @@ class MinifigDetector(multiprocessing.Process):
 
 		return index, self._class_labels[index]
 
-	def update(self, verbose=True):
+	def update(self, verbose=False):
 		self.reset_status()
 		img = self.camera.getData(grayscale=False)
 		lego_faces = self.lego_face_classifier.detectMultiScale(img,
-        scaleFactor=1.1,
-        minNeighbors=5,
-        minSize=(20,20),
-        maxSize=(60,60))
+		scaleFactor=1.1,
+		minNeighbors=5,
+		minSize=(20,20),
+		maxSize=(60,60))
 		if verbose:
 			print 'Found {0} potential matches'.format(len(lego_faces))
 		self.number_of_people = len(lego_faces)

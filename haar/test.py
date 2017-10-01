@@ -3,7 +3,7 @@ import sys
 
 faceCascade = cv2.CascadeClassifier('classifier/cascade.xml')
 
-video_capture = cv2.VideoCapture(3)
+video_capture = cv2.VideoCapture()
 
 while True:
     # Capture frame-by-frame
