@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-lego_cascade = cv2.CascadeClassifier('increased_lots/cascade.xml')
+lego_cascade = cv2.CascadeClassifier('leonidas/cascade.xml')
 for i in range(1,19):	
 	img = cv2.imread('tests/{0}.jpg'.format(i))
 	gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

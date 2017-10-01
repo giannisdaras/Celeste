@@ -144,12 +144,31 @@ class HologramController(StatePredictor):
 		1:State('update hologram',1)
 		}
 		sensors=[]
+		self.firebase = firebase.FirebaseApplication('https://celeste-54d66.firebaseio.com/', None)
+		self.peopleDict={0:'John','1':'Marios','2':'mary'}
 		states[0].addSubscriber(self.updateHologram)
 		super(HologramController, self).__init__(states = states, sensors = [], board_queue = board_queue, update_interval=update_interval)
 
+		#train follows
+		f1=open('../text_classification/john.txt','r')
+		f2=open('../text_classification/mary.txt','r')
+		f3=open('../text_classification/marios.txt','r')
+		temp=[]
+		temp.append(''.join(f1.readlines()))
+		temp.append(''.join(f2.readlines()))
+		temp.append(''.join(f3.readlines()))
+		f1.close()
+		f2.close()
+		f3.close()
+		self.text_clf = Pipeline([('vect', CountVectorizer()),('tfidf', TfidfTransformer()),('clf', MultinomialNB()),])
+		self.text_clf.fit(temp,[0,1,2])
+		super(HologramController, self).__init__(states = states, sensors = [], update_interval=update_interval)
+
 		
 	def updateHologram(self, x):
-		print 'HOLOLO'
+		result=self.peopleDict[self.text_clf.predict(self.hologramQuery)[0]]
+		self.firebase.put('/',{'url':result})
+
 
 
 class EnergySaverController(StatePredictor):
